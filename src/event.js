@@ -12,8 +12,9 @@ class EventEmitter {
   }
 
   off(eventName, fn) {
-    let handlers = this.events.get(eventName);
-    handlers = handlers.filter((handler) => handler.fn !== fn);
+    const handlers = this.events
+      .get(eventName)
+      .filter((handler) => handler.fn !== fn);
 
     console.log(`Shutting off ${eventName}...`);
     this.events.set(eventName, handlers);

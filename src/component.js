@@ -1,6 +1,4 @@
-import generateId from './utils';
-
-const uuid = () => generateId(12);
+import { uuid } from './utils';
 
 const stateStore = new Map();
 const defaultProps = ['textContent', 'innerHTML', 'outerHTML', 'innerText'];

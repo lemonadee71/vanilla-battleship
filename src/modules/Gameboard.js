@@ -1,11 +1,11 @@
-import uuid from '../utils';
+import { uuid } from '../utils';
 
 const tryCatchForLoop = (limit, fn, start = 0) => {
   for (let i = start; i < limit; i++) {
     try {
       fn.call(null, i);
     } catch (error) {
-      console.log('');
+      continue;
     }
   }
 };
