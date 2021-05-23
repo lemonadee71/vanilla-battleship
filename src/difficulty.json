@@ -1,0 +1,94 @@
+{
+  "test": {
+    "size": 5,
+    "ships": [
+      {
+        "name": "battleship",
+        "number": 1
+      }
+    ]
+  },
+  "normal": {
+    "size": 10,
+    "ships": [
+      {
+        "name": "battleship",
+        "number": 1
+      },
+      {
+        "name": "destroyer",
+        "number": 1
+      },
+      {
+        "name": "submarine",
+        "number": 1
+      },
+      {
+        "name": "patrolBoat",
+        "number": 3
+      },
+      {
+        "name": "boat",
+        "number": 3
+      }
+    ]
+  },
+  "medium": {
+    "size": 12,
+    "ships": [
+      {
+        "name": "carrier",
+        "number": 1
+      },
+      {
+        "name": "battleship",
+        "number": 1
+      },
+      {
+        "name": "destroyer",
+        "number": 2
+      },
+      {
+        "name": "submarine",
+        "number": 1
+      },
+      {
+        "name": "patrolBoat",
+        "number": 3
+      },
+      {
+        "name": "boat",
+        "number": 3
+      }
+    ]
+  },
+  "hard": {
+    "size": 16,
+    "ships": [
+      {
+        "name": "carrier",
+        "number": 1
+      },
+      {
+        "name": "battleship",
+        "number": 1
+      },
+      {
+        "name": "destroyer",
+        "number": 2
+      },
+      {
+        "name": "submarine",
+        "number": 2
+      },
+      {
+        "name": "patrolBoat",
+        "number": 4
+      },
+      {
+        "name": "boat",
+        "number": 4
+      }
+    ]
+  }
+}

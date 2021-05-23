@@ -1,0 +1,8 @@
+{
+  "carrier": { "name": "carrier", "length": 5 },
+  "battleship": { "name": "battleship", "length": 4 },
+  "destroyer": { "name": "destroyer", "length": 3 },
+  "submarine": { "name": "submarine", "length": 3 },
+  "patrolBoat": { "name": "patrol", "length": 2 },
+  "boat": { "name": "boat", "length": 1 }
+}
