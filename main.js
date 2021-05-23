@@ -12,17 +12,154 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./component */ "./src/component.js");
+/* harmony import */ var _Game__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Game */ "./src/Game.js");
+/* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./component */ "./src/component.js");
 
 
-const App = () =>
-  _component__WEBPACK_IMPORTED_MODULE_0__.html`<div>
-    Hello World {%
-    <h1>Test</h1>
-    %}
+
+const App = () => {
+  const isGameStart = (0,_component__WEBPACK_IMPORTED_MODULE_1__.createState)(false);
+  let mode = 'test';
+
+  const changeMode = (e) => {
+    mode = e.target.value;
+  };
+
+  const startGame = () => {
+    isGameStart.value = true;
+  };
+
+  const restartGame = () => {
+    isGameStart.value = false;
+  };
+
+  return _component__WEBPACK_IMPORTED_MODULE_1__.html`<div>
+    <h1>Battleship</h1>
+    <div
+      ${{
+        $content: isGameStart.bindValue((val) =>
+          !val
+            ? _component__WEBPACK_IMPORTED_MODULE_1__.html`
+                <label for="mode">Choose difficulty:</label>
+                <select name="mode" ${{ onChange: changeMode }}>
+                  <option value="test" selected>Test</option>
+                  <option value="normal">Normal</option>
+                  <option value="medium">Intermediate</option>
+                  <option value="hard">Hard</option>
+                </select>
+                <button ${{ onClick: startGame }}>Start game</button>
+              `
+            : _component__WEBPACK_IMPORTED_MODULE_1__.html`${(0,_Game__WEBPACK_IMPORTED_MODULE_0__.default)(mode, restartGame)}`
+        ),
+      }}
+    ></div>
   </div>`;
+};
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (App);
+
+
+/***/ }),
+
+/***/ "./src/Game.js":
+/*!*********************!*\
+  !*** ./src/Game.js ***!
+  \*********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./component */ "./src/component.js");
+/* harmony import */ var _components_Board__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/Board */ "./src/components/Board.js");
+/* harmony import */ var _modules_Ship__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/Ship */ "./src/modules/Ship.js");
+/* harmony import */ var _modules_Gameboard__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./modules/Gameboard */ "./src/modules/Gameboard.js");
+/* harmony import */ var _modules_Player__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./modules/Player */ "./src/modules/Player.js");
+/* harmony import */ var _difficulty_json__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./difficulty.json */ "./src/difficulty.json");
+/* harmony import */ var _ships_json__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./ships.json */ "./src/ships.json");
+
+
+
+
+
+
+
+
+const Game = (mode, restartGame) => {
+  const isFinishPlacing = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(false);
+  const { size, ships } = _difficulty_json__WEBPACK_IMPORTED_MODULE_5__[mode];
+
+  const placeShipsInRandom = () => {
+    const currentBoard = (0,_modules_Gameboard__WEBPACK_IMPORTED_MODULE_3__.default)(size);
+
+    const allShips = [...ships];
+    let currentShip = null;
+
+    while (allShips.length) {
+      currentShip = allShips.shift();
+
+      let currentCount = currentShip.number;
+      while (currentCount) {
+        const move = (0,_modules_Player__WEBPACK_IMPORTED_MODULE_4__.doRandomPlacing)(size);
+        const shipDetails = _ships_json__WEBPACK_IMPORTED_MODULE_6__[currentShip.name];
+        const ship = new _modules_Ship__WEBPACK_IMPORTED_MODULE_2__.default(shipDetails.name, shipDetails.length);
+
+        try {
+          currentBoard.placeShip({ ship, ...move });
+          currentCount -= 1;
+        } catch (error) {
+          // console.warn(error.toString());
+          continue;
+        }
+      }
+    }
+
+    return currentBoard.getBoard();
+  };
+
+  const initBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)({
+    player: placeShipsInRandom(),
+    enemy: placeShipsInRandom(),
+  });
+
+  const randomize = () => {
+    initBoard.value = {
+      player: placeShipsInRandom(),
+      enemy: placeShipsInRandom(),
+    };
+  };
+
+  const finishPlacing = () => {
+    isFinishPlacing.value = true;
+  };
+
+  return _component__WEBPACK_IMPORTED_MODULE_0__.html`
+    <button ${{ onClick: restartGame }}>Restart</button>
+    <div
+      ${{
+        $content: isFinishPlacing.bindValue((val) =>
+          !val
+            ? _component__WEBPACK_IMPORTED_MODULE_0__.html`<button ${{ onClick: randomize }}>Randomize</button>
+                <button ${{ onClick: finishPlacing }}>Finish placing</button>
+                <div
+                  style="display: flex;"
+                  ${{
+                    $content: initBoard.bindValue(
+                      (state) =>
+                        _component__WEBPACK_IMPORTED_MODULE_0__.html`${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)(size, state.player)}
+                        ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)(size, state.enemy)}`
+                    ),
+                  }}
+                ></div>`
+            : _component__WEBPACK_IMPORTED_MODULE_0__.html`<h2>Hello World</h2>`
+        ),
+      }}
+    ></div>
+  `;
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Game);
 
 
 /***/ }),
@@ -42,8 +179,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
 
-
-const uuid = () => (0,_utils__WEBPACK_IMPORTED_MODULE_0__.default)(12);
 
 const stateStore = new Map();
 const defaultProps = ['textContent', 'innerHTML', 'outerHTML', 'innerText'];
@@ -123,7 +258,7 @@ const _handlerValueReducer = (type, obj) => {
 
 const _generateHandler = (type, obj) => {
   const arr = [];
-  const id = uuid();
+  const id = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.uuid)();
   const attrName = `data-${type}-id`;
   const dataAttr = `${attrName}="${id}"`;
 
@@ -143,7 +278,7 @@ const _generateHandler = (type, obj) => {
 };
 
 const _bindState = (state) => {
-  const id = uuid();
+  const id = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.uuid)();
   const proxyId = `data-proxy-id="${id}"`;
   const handlers = {};
 
@@ -399,7 +534,7 @@ const _setHandler = (stateId) => ({
 });
 
 const createState = (initValue = null) => {
-  const _id = uuid();
+  const _id = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.uuid)();
   // Map contains id keys
   // id keys are proxy ids of elements binded to the state
   stateStore.set(_id, new Map());
@@ -433,6 +568,338 @@ const createState = (initValue = null) => {
 
 /***/ }),
 
+/***/ "./src/components/Board.js":
+/*!*********************************!*\
+  !*** ./src/components/Board.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../component */ "./src/component.js");
+
+
+const Board = (size, board) => {
+  const determineCellClass = (cell) => {
+    switch (cell) {
+      case 'HIT':
+        return ' hit';
+      case 'MISS':
+        return ' missed';
+      case 'SUNK':
+        return ' sunk';
+      case undefined:
+        return ' occupied';
+      case null:
+        return '';
+      default:
+        return ' ship';
+    }
+  };
+
+  return _component__WEBPACK_IMPORTED_MODULE_0__.html`<div
+    id="grid"
+    style="grid-template-columns: repeat(${size}, 1fr);"
+  >
+    ${board
+      .map((row, i) =>
+        row.map(
+          (cell, j) =>
+            `<div
+              data-pos="${`${i}-${j}`}"
+              class="${`cell${determineCellClass(cell)}`}"
+            ></div>`
+        )
+      )
+      .flat()}
+  </div>`;
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Board);
+
+
+/***/ }),
+
+/***/ "./src/difficulty.json":
+/*!*****************************!*\
+  !*** ./src/difficulty.json ***!
+  \*****************************/
+/***/ ((module) => {
+
+module.exports = JSON.parse('{"test":{"size":5,"ships":[{"name":"battleship","number":1}]},"normal":{"size":10,"ships":[{"name":"battleship","number":1},{"name":"destroyer","number":1},{"name":"submarine","number":1},{"name":"patrolBoat","number":3},{"name":"boat","number":3}]},"medium":{"size":12,"ships":[{"name":"carrier","number":1},{"name":"battleship","number":1},{"name":"destroyer","number":2},{"name":"submarine","number":1},{"name":"patrolBoat","number":3},{"name":"boat","number":3}]},"hard":{"size":16,"ships":[{"name":"carrier","number":1},{"name":"battleship","number":1},{"name":"destroyer","number":2},{"name":"submarine","number":2},{"name":"patrolBoat","number":4},{"name":"boat","number":4}]}}');
+
+/***/ }),
+
+/***/ "./src/modules/Gameboard.js":
+/*!**********************************!*\
+  !*** ./src/modules/Gameboard.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
+
+
+const tryCatchForLoop = (limit, fn, start = 0) => {
+  for (let i = start; i < limit; i++) {
+    try {
+      fn.call(null, i);
+    } catch (error) {
+      continue;
+    }
+  }
+};
+
+const Gameboard = (size) => {
+  const state = {
+    ships: new Map(),
+  };
+
+  let board = [...new Array(size).fill([])].map(() => [
+    ...new Array(size).fill(null),
+  ]);
+
+  const reset = () => {
+    board = [...new Array(size).fill([])].map(() => [
+      ...new Array(size).fill(null),
+    ]);
+    state.ships.clear();
+  };
+
+  const get = (row, col) => {
+    if (row < 0 || row > size - 1 || col < 0 || col > size - 1) {
+      throw new Error('Coordinates is off bounds');
+    }
+
+    return board[row][col];
+  };
+
+  const getBoard = () => [...board].map((row) => [...row]);
+
+  const setBoard = (newBoard) => {
+    board = newBoard;
+  };
+
+  const _markSurroundings = (pos, length, direction) => {
+    const boardCopy = getBoard();
+    const [rowLimit, columnLimit] =
+      direction === 'y' ? [length + 2, 2] : [2, length + 2];
+
+    const start = [pos.start.row - 1, pos.start.col - 1];
+    const end = [pos.end.row + 1, pos.end.col + 1];
+
+    tryCatchForLoop(columnLimit, (i) => {
+      get(start[0], start[1] + i);
+      boardCopy[start[0]][start[1] + i] = undefined;
+    });
+    tryCatchForLoop(columnLimit, (i) => {
+      get(end[0], end[1] - i);
+      boardCopy[end[0]][end[1] - i] = undefined;
+    });
+    tryCatchForLoop(rowLimit, (i) => {
+      get(start[0] + i, start[1]);
+      boardCopy[start[0] + i][start[1]] = undefined;
+    });
+    tryCatchForLoop(rowLimit, (i) => {
+      get(end[0] - i, end[1]);
+      boardCopy[end[0] - i][end[1]] = undefined;
+    });
+
+    setBoard(boardCopy);
+  };
+
+  const placeShip = ({ pos, ship, direction = 'x' }) => {
+    const boardCopy = getBoard();
+
+    const id = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.uuid)(4);
+    state.ships.set(id, ship);
+
+    const [rowIncrement, columnIncrement] = direction === 'y' ? [1, 0] : [0, 1];
+    const [row, col] = pos;
+
+    // Check if cell is already marked
+    if (typeof get(row, col) === 'string') throw new Error('Cell occupied');
+
+    let xi = 0;
+    let yi = 0;
+
+    for (let i = 0; i < ship.length; i++) {
+      let marker;
+
+      // Check if placing will result in ship
+      // to go off the board
+      try {
+        marker = get(row + yi, col + xi);
+      } catch (error) {
+        throw new Error('Ship off-bounds');
+      }
+
+      // Throw error if placing will result in the ship
+      // occupying another ship's surroundings
+      if (marker === undefined) throw new Error('Cell within a ship territory');
+
+      // Throw error when placing will result in overlap
+      if (marker !== null) throw new Error('Ship overlaps');
+
+      boardCopy[row + yi][col + xi] = `${ship.name}[${i}]_${id}`;
+
+      xi += columnIncrement;
+      yi += rowIncrement;
+    }
+
+    setBoard(boardCopy);
+
+    const coordinates = {
+      start: { row, col },
+      end: {
+        row: direction === 'y' ? row + ship.length - 1 : row,
+        col: direction === 'x' ? col + ship.length - 1 : col,
+      },
+    };
+
+    _markSurroundings(coordinates, ship.length, direction);
+
+    return true;
+  };
+
+  const isGameOver = () =>
+    board.every((row) =>
+      row.every((cell) => ['HIT', 'MISS', null, undefined].includes(cell))
+    );
+
+  // v2
+  // return Array.from(state.ships, ([key, value]) => ({
+  //   key,
+  //   value,
+  // })).every(({ value: ship }) => ship.isSunk());
+
+  const receiveAttack = (x, y) => {
+    const boardCopy = getBoard();
+    const marker = get(x, y);
+
+    if (marker === 'HIT' || marker === 'MISS') {
+      throw new Error(`Cell[${x}][${y}] was already selected`);
+    }
+
+    if (!marker) {
+      boardCopy[x][y] = 'MISS';
+      setBoard(boardCopy);
+
+      return false;
+    }
+
+    const index = marker.match(/\[(\d)\]/)[1];
+    const id = marker.split('_')[1];
+
+    const ship = state.ships.get(id);
+    ship.hit(index);
+
+    boardCopy[x][y] = 'HIT';
+    setBoard(boardCopy);
+
+    return true;
+  };
+
+  return {
+    get,
+    getBoard,
+    reset,
+    placeShip,
+    receiveAttack,
+    isGameOver,
+  };
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Gameboard);
+
+
+/***/ }),
+
+/***/ "./src/modules/Player.js":
+/*!*******************************!*\
+  !*** ./src/modules/Player.js ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "makeMove": () => (/* binding */ makeMove),
+/* harmony export */   "doRandomAttack": () => (/* binding */ doRandomAttack),
+/* harmony export */   "doRandomPlacing": () => (/* binding */ doRandomPlacing)
+/* harmony export */ });
+const makeMove = (size) => [
+  Math.floor(Math.random() * size),
+  Math.floor(Math.random() * size),
+];
+
+const doRandomAttack = (size, pastMoves = []) => {
+  let move;
+
+  do {
+    move = makeMove(size);
+  } while (pastMoves.includes(move.join('-')));
+
+  return move;
+};
+
+const doRandomPlacing = (size) => ({
+  pos: makeMove(size),
+  direction: Math.floor(Math.random() * 2) ? 'x' : 'y',
+});
+
+
+
+
+/***/ }),
+
+/***/ "./src/modules/Ship.js":
+/*!*****************************!*\
+  !*** ./src/modules/Ship.js ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+class Ship {
+  constructor(name, length) {
+    this.name = name;
+    this.length = length;
+    this.body = new Array(length).fill('O');
+  }
+
+  hit(coord) {
+    this.body[coord] = 'X';
+
+    return this;
+  }
+
+  isSunk() {
+    return this.body.every((part) => part === 'X');
+  }
+}
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Ship);
+
+
+/***/ }),
+
+/***/ "./src/ships.json":
+/*!************************!*\
+  !*** ./src/ships.json ***!
+  \************************/
+/***/ ((module) => {
+
+module.exports = JSON.parse('{"carrier":{"name":"carrier","length":5},"battleship":{"name":"battleship","length":4},"destroyer":{"name":"destroyer","length":3},"submarine":{"name":"submarine","length":3},"patrolBoat":{"name":"patrol","length":2},"boat":{"name":"boat","length":1}}');
+
+/***/ }),
+
 /***/ "./src/utils.js":
 /*!**********************!*\
   !*** ./src/utils.js ***!
@@ -441,11 +908,34 @@ const createState = (initValue = null) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
+/* harmony export */   "uuid": () => (/* binding */ uuid)
 /* harmony export */ });
-const uuid = (length = 4) => Math.random().toString(36).substr(2, length);
+const uuid = (length = 10) => Math.random().toString(36).substr(2, length);
 
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (uuid);
+const $ = (query) => {
+  const [idFlag, allFlag, dataAttrFlag] = ['#', '--a', '@'];
+
+  const isId = query.includes(idFlag);
+  const isAll = query.includes(allFlag);
+  const isDataAttr = query.includes(dataAttrFlag);
+  const isDescendantSelector = query.includes(' ');
+
+  if (isId && !isDescendantSelector) {
+    return document.getElementById(query.replace(idFlag, ''));
+  }
+  if (isAll) {
+    return document.querySelectorAll(query.replace(allFlag, ''));
+  }
+  if (isDataAttr && !isDescendantSelector) {
+    return document.querySelector(`[data-${query.replace(dataAttrFlag, '')}]`);
+  }
+
+  return document.querySelector(query);
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ($);
+
 
 
 /***/ })
