@@ -35,7 +35,7 @@ const App = () => {
   };
 
   return _component__WEBPACK_IMPORTED_MODULE_1__.html`<div>
-    <h1>Battleship</h1>
+    <h1 class="title">Battleship</h1>
     <div
       ${{
         $content: isGameStart.bindValue((val) =>
@@ -93,7 +93,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const Game = (mode, restartGame) => {
+const Game = (mode, restardHandler) => {
   const aiPastMoves = [];
   const currentTurn = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(0);
   const isFinishPlacing = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(false);
@@ -143,35 +143,40 @@ const Game = (mode, restartGame) => {
     isFinishPlacing.value = true;
   };
 
-  const syncCellToBoard =
-    (player = 'player') =>
-    ([x, y]) => ({
-      $class: initBoard.bindValue(
-        (state) =>
-          `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_7__.determineCellClass)(
-            state[player].get(x, y),
-            player === 'player'
-          )}`
-      ),
-    });
+  const syncCell = ([x, y]) => ({
+    $class: initBoard.bindValue(
+      (state) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_7__.determineCellClass)(state.player.get(x, y), true)}`
+    ),
+  });
 
   const aiAttack = () => {
+    console.log('ai attacking...');
     const move = (0,_modules_Player__WEBPACK_IMPORTED_MODULE_4__.doRandomAttack)(size, aiPastMoves).join('-');
     (0,_utils__WEBPACK_IMPORTED_MODULE_7__.default)(`[data-board-name="player"] .cell[data-pos="${move}"]`).click();
     aiPastMoves.push(move);
   };
 
-  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('game over', (playerNum) => {
-    alert(`player ${playerNum} lose!`);
+  const finishGame = (playerNum) => {
+    alert(`player ${+!playerNum} wins!`);
     setTimeout(restartGame, 500);
-  });
-  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('next turn', () => {
+  };
+
+  const nextTurn = () => {
     currentTurn.value = +!currentTurn.value;
 
     if (currentTurn.value) {
       setTimeout(aiAttack, 500);
     }
-  });
+  };
+
+  const restartGame = () => {
+    _event__WEBPACK_IMPORTED_MODULE_9__.default.off('game over', finishGame);
+    _event__WEBPACK_IMPORTED_MODULE_9__.default.off('next turn', nextTurn);
+    restardHandler();
+  };
+
+  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('game over', finishGame);
+  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('next turn', nextTurn);
 
   return _component__WEBPACK_IMPORTED_MODULE_0__.html`
     <button ${{ onClick: restartGame }}>Restart</button>
@@ -185,12 +190,7 @@ const Game = (mode, restartGame) => {
                   ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)({
                     size,
                     board: initBoard.value.player.getBoard(),
-                    cellProps: syncCellToBoard(),
-                  })}
-                  ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)({
-                    size,
-                    board: initBoard.value.enemy.getBoard(),
-                    cellProps: syncCellToBoard('enemy'),
+                    cellProps: syncCell,
                   })}
                 </div>`
             : _component__WEBPACK_IMPORTED_MODULE_0__.html`<div style="display: flex;">
@@ -686,7 +686,7 @@ const PlayerBoard = (type, size, gameboard, currentTurn) => {
       thisBoard.value = gameboard.getBoard();
 
       if (gameboard.isGameOver()) {
-        _event__WEBPACK_IMPORTED_MODULE_2__.default.emit('game over', type);
+        setTimeout(() => _event__WEBPACK_IMPORTED_MODULE_2__.default.emit('game over', type), 300);
         return;
       }
 
@@ -696,7 +696,7 @@ const PlayerBoard = (type, size, gameboard, currentTurn) => {
     }
   };
 
-  const syncCellToBoard = ([x, y]) => ({
+  const syncCell = ([x, y]) => ({
     $class: thisBoard.bindValue(
       (board) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(board[x][y], !type)}`
     ),
@@ -707,7 +707,7 @@ const PlayerBoard = (type, size, gameboard, currentTurn) => {
     clickHandler,
     name: !type ? 'player' : 'enemy',
     board: thisBoard.value,
-    cellProps: syncCellToBoard,
+    cellProps: syncCell,
   });
 };
 

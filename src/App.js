@@ -19,7 +19,7 @@ const App = () => {
   };
 
   return html`<div>
-    <h1>Battleship</h1>
+    <h1 class="title">Battleship</h1>
     <div
       ${{
         $content: isGameStart.bindValue((val) =>

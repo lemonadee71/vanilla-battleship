@@ -9,7 +9,7 @@ import $, { determineCellClass } from './utils';
 import PlayerBoard from './components/PlayerBoard';
 import event from './event';
 
-const Game = (mode, restartGame) => {
+const Game = (mode, restardHandler) => {
   const aiPastMoves = [];
   const currentTurn = createState(0);
   const isFinishPlacing = createState(false);
@@ -59,35 +59,40 @@ const Game = (mode, restartGame) => {
     isFinishPlacing.value = true;
   };
 
-  const syncCellToBoard =
-    (player = 'player') =>
-    ([x, y]) => ({
-      $class: initBoard.bindValue(
-        (state) =>
-          `cell ${determineCellClass(
-            state[player].get(x, y),
-            player === 'player'
-          )}`
-      ),
-    });
+  const syncCell = ([x, y]) => ({
+    $class: initBoard.bindValue(
+      (state) => `cell ${determineCellClass(state.player.get(x, y), true)}`
+    ),
+  });
 
   const aiAttack = () => {
+    console.log('ai attacking...');
     const move = doRandomAttack(size, aiPastMoves).join('-');
     $(`[data-board-name="player"] .cell[data-pos="${move}"]`).click();
     aiPastMoves.push(move);
   };
 
-  event.on('game over', (playerNum) => {
-    alert(`player ${playerNum} lose!`);
+  const finishGame = (playerNum) => {
+    alert(`player ${+!playerNum} wins!`);
     setTimeout(restartGame, 500);
-  });
-  event.on('next turn', () => {
+  };
+
+  const nextTurn = () => {
     currentTurn.value = +!currentTurn.value;
 
     if (currentTurn.value) {
       setTimeout(aiAttack, 500);
     }
-  });
+  };
+
+  const restartGame = () => {
+    event.off('game over', finishGame);
+    event.off('next turn', nextTurn);
+    restardHandler();
+  };
+
+  event.on('game over', finishGame);
+  event.on('next turn', nextTurn);
 
   return html`
     <button ${{ onClick: restartGame }}>Restart</button>
@@ -101,12 +106,7 @@ const Game = (mode, restartGame) => {
                   ${Board({
                     size,
                     board: initBoard.value.player.getBoard(),
-                    cellProps: syncCellToBoard(),
-                  })}
-                  ${Board({
-                    size,
-                    board: initBoard.value.enemy.getBoard(),
-                    cellProps: syncCellToBoard('enemy'),
+                    cellProps: syncCell,
                   })}
                 </div>`
             : html`<div style="display: flex;">
