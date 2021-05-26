@@ -3,12 +3,17 @@ import { determineCellClass } from '../utils';
 import event from '../event';
 import Board from './Board';
 
-const PlayerBoard = (type, size, gameboard, currentTurn) => {
+const PlayerBoard = (player, currentTurn, inTransition) => {
+  const { id, type, number, gameboard } = player;
   const thisBoard = createState(gameboard.getBoard());
 
   const clickHandler = (e) => {
-    if (!e.target.matches('.cell')) return;
-    if (type === currentTurn.value) return;
+    if (
+      !e.target.matches('.cell') ||
+      number === currentTurn.value ||
+      inTransition.value
+    )
+      return;
 
     try {
       const [x, y] = e.target.getAttribute('data-pos').split('-');
@@ -17,28 +22,29 @@ const PlayerBoard = (type, size, gameboard, currentTurn) => {
       thisBoard.value = gameboard.getBoard();
 
       if (gameboard.isGameOver()) {
-        setTimeout(() => event.emit('game over', currentTurn.value), 300);
+        setTimeout(() => event.emit('player defeated', number), 300);
         return;
       }
 
-      event.emit('next turn', type);
+      event.emit('attack received', number);
     } catch (error) {
       console.warn(error);
     }
   };
 
-  const syncCell = ([x, y]) => ({
+  const cellProps = ([x, y]) => ({
     $class: thisBoard.bindValue(
-      (board) => `cell ${determineCellClass(board[x][y], type === 'player')}`
+      (board) =>
+        `cell ${determineCellClass(board[x][y], number === currentTurn.value)}`
     ),
   });
 
   return Board({
-    size,
+    number,
     clickHandler,
-    name: type,
+    cellProps,
     board: thisBoard.value,
-    cellProps: syncCell,
+    size: gameboard.size,
   });
 };
 

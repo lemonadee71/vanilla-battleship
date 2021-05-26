@@ -5,16 +5,19 @@ import Gameboard from './modules/Gameboard';
 import { doRandomPlacing } from './modules/Player';
 import difficulty from './difficulty.json';
 import allShipDetails from './ships.json';
-import { determineCellClass } from './utils';
+import $, { determineCellClass, uuid } from './utils';
 import PlayerBoard from './components/PlayerBoard';
 import event from './event';
 import createAI from './enemy';
 
-const Game = (mode, restardHandler) => {
-  const currentTurn = { value: 'player' };
+const Game = (mode, numberOfEnemies, restartHandler) => {
+  const currentTurn = { value: 1 };
+  const isInTransition = { value: false };
   const isFinishPlacing = createState(false);
+
   const { size, ships } = difficulty[mode];
-  const ai = createAI(size);
+  const allPlayers = new Map();
+  const defeatedPlayers = [];
 
   const placeShipsInRandom = () => {
     const currentBoard = Gameboard(size);
@@ -44,47 +47,107 @@ const Game = (mode, restardHandler) => {
     return currentBoard;
   };
 
+  const generatePlayers = () => {
+    for (let i = 1; i < numberOfEnemies + 2; i++) {
+      const id = uuid(4);
+      // TODO: allow users to choose the player type
+      const type = i === 1 ? 'player' : 'computer';
+      const { init, destroy } =
+        type === 'computer'
+          ? createAI(i, numberOfEnemies + 1, size)
+          : { init: null, destroy: null };
+
+      allPlayers.set(i, {
+        id,
+        type,
+        init,
+        destroy,
+        number: i,
+        gameboard: type === 'computer' ? placeShipsInRandom() : null,
+        isDefeated: false,
+      });
+    }
+  };
+
   const initBoard = createState({
     player: placeShipsInRandom(),
-    enemy: placeShipsInRandom(),
   });
 
   const randomize = () => {
     initBoard.value = {
       player: placeShipsInRandom(),
-      enemy: placeShipsInRandom(),
     };
   };
 
   const finishPlacing = () => {
+    allPlayers.get(1).gameboard = initBoard.value.player;
     isFinishPlacing.value = true;
   };
 
-  const syncCell = ([x, y]) => ({
+  const announce = (text) => {
+    $('#announcement').textContent = text;
+  };
+
+  const finishGame = () => {
+    alert(`Player ${currentTurn.value} wins!`);
+    setTimeout(restartGame, 500);
+  };
+
+  const playerDefeated = (playerNumber) => {
+    defeatedPlayers.push(playerNumber);
+
+    const player = allPlayers.get(playerNumber);
+    player.isDefeated = true;
+
+    if (player.destroy) player.destroy();
+
+    const alive = [...allPlayers.values()].filter((p) => !p.isDefeated);
+    const isGameOver = alive && alive.length === 1;
+
+    if (!isGameOver) $(`[data-board-num="${playerNumber}"`).remove();
+    if (isGameOver) finishGame();
+  };
+
+  const nextTurn = (target) => {
+    isInTransition.value = true;
+    announce(`Player ${currentTurn.value} attacked Player ${target}`);
+
+    do {
+      currentTurn.value++;
+    } while (defeatedPlayers.includes(currentTurn.value));
+
+    if (currentTurn.value > numberOfEnemies + 1) {
+      currentTurn.value = 1;
+    }
+
+    setTimeout(() => {
+      event.emit('next turn', currentTurn.value);
+      announce(`Player ${currentTurn.value} turn`);
+
+      isInTransition.value = false;
+    }, 500);
+  };
+
+  const restartGame = () => {
+    event.off('player defeated', playerDefeated);
+    event.off('attack received', nextTurn);
+    [...allPlayers.values()].map(
+      (player) => player.destroy && player.destroy()
+    );
+    restartHandler();
+  };
+
+  // Initialize game
+  event.on('player defeated', playerDefeated);
+  event.on('attack received', nextTurn);
+  generatePlayers();
+  [...allPlayers.values()].map((player) => player.init && player.init());
+
+  const cellProps = ([x, y]) => ({
     $class: initBoard.bindValue(
       (state) => `cell ${determineCellClass(state.player.get(x, y), true)}`
     ),
   });
-
-  const finishGame = (type) => {
-    alert(`${type} wins!`);
-    setTimeout(restartGame, 500);
-  };
-
-  const nextTurn = (type) => {
-    currentTurn.value = type;
-  };
-
-  const restartGame = () => {
-    event.off('game over', finishGame);
-    event.off('next turn', nextTurn);
-    ai.destroy();
-    restardHandler();
-  };
-
-  event.on('game over', finishGame);
-  event.on('next turn', nextTurn);
-  ai.init();
 
   return html`
     <button ${{ onClick: restartGame }}>Restart</button>
@@ -94,27 +157,20 @@ const Game = (mode, restardHandler) => {
           !val
             ? html`<button ${{ onClick: randomize }}>Randomize</button>
                 <button ${{ onClick: finishPlacing }}>Finish placing</button>
+                <h2>Place your ships</h2>
                 <div style="display: flex;">
                   ${Board({
                     size,
+                    cellProps,
                     board: initBoard.value.player.getBoard(),
-                    cellProps: syncCell,
                   })}
                 </div>`
-            : html`<div style="display: flex;">
-                ${PlayerBoard(
-                  'player',
-                  size,
-                  initBoard.value.player,
-                  currentTurn
-                )}
-                ${PlayerBoard(
-                  'enemy',
-                  size,
-                  initBoard.value.enemy,
-                  currentTurn
-                )}
-              </div>`
+            : html`<h2 id="announcement">Player ${currentTurn.value} turn</h2>
+                <div style="display: flex;">
+                  ${[...allPlayers.values()].map((player) =>
+                    PlayerBoard(player, currentTurn, isInTransition)
+                  )}
+                </div>`
         ),
       }}
     ></div>

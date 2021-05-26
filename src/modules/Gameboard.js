@@ -161,6 +161,7 @@ const Gameboard = (size) => {
   };
 
   return {
+    size,
     get,
     getBoard,
     reset,

@@ -1,11 +1,11 @@
 import { html } from '../component';
 import { determineCellClass } from '../utils';
 
-const Board = ({ name, size, board, clickHandler, cellProps }) =>
+const Board = ({ number, size, board, clickHandler, cellProps }) =>
   html`<div
     class="grid"
     style="grid-template-columns: repeat(${size}, 1fr);"
-    ${name ? `data-board-name="${name}"` : ''}
+    ${number ? `data-board-num="${number}"` : ''}
     ${{ onClick: clickHandler }}
   >
     ${board

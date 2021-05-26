@@ -21,7 +21,7 @@ const $ = (query) => {
   return document.querySelector(query);
 };
 
-const determineCellClass = (cell, isPlayer) => {
+const determineCellClass = (cell, isMyTurn) => {
   switch (cell) {
     case 'HIT':
       return 'hit';
@@ -34,7 +34,8 @@ const determineCellClass = (cell, isPlayer) => {
     case null:
       return '';
     default:
-      return isPlayer ? 'ship' : '';
+      return 'ship';
+    // return isMyTurn ? 'ship' : '';
   }
 };
 
