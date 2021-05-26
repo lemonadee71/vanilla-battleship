@@ -17,26 +17,26 @@ const PlayerBoard = (type, size, gameboard, currentTurn) => {
       thisBoard.value = gameboard.getBoard();
 
       if (gameboard.isGameOver()) {
-        setTimeout(() => event.emit('game over', type), 300);
+        setTimeout(() => event.emit('game over', currentTurn.value), 300);
         return;
       }
 
-      event.emit('next turn');
+      event.emit('next turn', type);
     } catch (error) {
-      console.warn(error.toString());
+      console.warn(error);
     }
   };
 
   const syncCell = ([x, y]) => ({
     $class: thisBoard.bindValue(
-      (board) => `cell ${determineCellClass(board[x][y], !type)}`
+      (board) => `cell ${determineCellClass(board[x][y], type === 'player')}`
     ),
   });
 
   return Board({
     size,
     clickHandler,
-    name: !type ? 'player' : 'enemy',
+    name: type,
     board: thisBoard.value,
     cellProps: syncCell,
   });

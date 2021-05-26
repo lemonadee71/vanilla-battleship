@@ -2,18 +2,19 @@ import { createState, html } from './component';
 import Board from './components/Board';
 import Ship from './modules/Ship';
 import Gameboard from './modules/Gameboard';
-import { doRandomAttack, doRandomPlacing } from './modules/Player';
+import { doRandomPlacing } from './modules/Player';
 import difficulty from './difficulty.json';
 import allShipDetails from './ships.json';
-import $, { determineCellClass } from './utils';
+import { determineCellClass } from './utils';
 import PlayerBoard from './components/PlayerBoard';
 import event from './event';
+import createAI from './enemy';
 
 const Game = (mode, restardHandler) => {
-  const aiPastMoves = [];
-  const currentTurn = createState(0);
+  const currentTurn = { value: 'player' };
   const isFinishPlacing = createState(false);
   const { size, ships } = difficulty[mode];
+  const ai = createAI(size);
 
   const placeShipsInRandom = () => {
     const currentBoard = Gameboard(size);
@@ -65,34 +66,25 @@ const Game = (mode, restardHandler) => {
     ),
   });
 
-  const aiAttack = () => {
-    console.log('ai attacking...');
-    const move = doRandomAttack(size, aiPastMoves).join('-');
-    $(`[data-board-name="player"] .cell[data-pos="${move}"]`).click();
-    aiPastMoves.push(move);
-  };
-
-  const finishGame = (playerNum) => {
-    alert(`player ${+!playerNum} wins!`);
+  const finishGame = (type) => {
+    alert(`${type} wins!`);
     setTimeout(restartGame, 500);
   };
 
-  const nextTurn = () => {
-    currentTurn.value = +!currentTurn.value;
-
-    if (currentTurn.value) {
-      setTimeout(aiAttack, 500);
-    }
+  const nextTurn = (type) => {
+    currentTurn.value = type;
   };
 
   const restartGame = () => {
     event.off('game over', finishGame);
     event.off('next turn', nextTurn);
+    ai.destroy();
     restardHandler();
   };
 
   event.on('game over', finishGame);
   event.on('next turn', nextTurn);
+  ai.init();
 
   return html`
     <button ${{ onClick: restartGame }}>Restart</button>
@@ -110,8 +102,18 @@ const Game = (mode, restardHandler) => {
                   })}
                 </div>`
             : html`<div style="display: flex;">
-                ${PlayerBoard(0, size, initBoard.value.player, currentTurn)}
-                ${PlayerBoard(1, size, initBoard.value.enemy, currentTurn)}
+                ${PlayerBoard(
+                  'player',
+                  size,
+                  initBoard.value.player,
+                  currentTurn
+                )}
+                ${PlayerBoard(
+                  'enemy',
+                  size,
+                  initBoard.value.enemy,
+                  currentTurn
+                )}
               </div>`
         ),
       }}
