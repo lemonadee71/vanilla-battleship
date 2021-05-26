@@ -2,11 +2,16 @@ import { createState, html } from './component';
 import Board from './components/Board';
 import Ship from './modules/Ship';
 import Gameboard from './modules/Gameboard';
-import { doRandomPlacing } from './modules/Player';
+import { doRandomAttack, doRandomPlacing } from './modules/Player';
 import difficulty from './difficulty.json';
 import allShipDetails from './ships.json';
+import $, { determineCellClass } from './utils';
+import PlayerBoard from './components/PlayerBoard';
+import event from './event';
 
 const Game = (mode, restartGame) => {
+  const aiPastMoves = [];
+  const currentTurn = createState(0);
   const isFinishPlacing = createState(false);
   const { size, ships } = difficulty[mode];
 
@@ -35,7 +40,7 @@ const Game = (mode, restartGame) => {
       }
     }
 
-    return currentBoard.getBoard();
+    return currentBoard;
   };
 
   const initBoard = createState({
@@ -54,6 +59,36 @@ const Game = (mode, restartGame) => {
     isFinishPlacing.value = true;
   };
 
+  const syncCellToBoard =
+    (player = 'player') =>
+    ([x, y]) => ({
+      $class: initBoard.bindValue(
+        (state) =>
+          `cell ${determineCellClass(
+            state[player].get(x, y),
+            player === 'player'
+          )}`
+      ),
+    });
+
+  const aiAttack = () => {
+    const move = doRandomAttack(size, aiPastMoves).join('-');
+    $(`[data-board-name="player"] .cell[data-pos="${move}"]`).click();
+    aiPastMoves.push(move);
+  };
+
+  event.on('game over', (playerNum) => {
+    alert(`player ${playerNum} lose!`);
+    setTimeout(restartGame, 500);
+  });
+  event.on('next turn', () => {
+    currentTurn.value = +!currentTurn.value;
+
+    if (currentTurn.value) {
+      setTimeout(aiAttack, 500);
+    }
+  });
+
   return html`
     <button ${{ onClick: restartGame }}>Restart</button>
     <div
@@ -62,17 +97,22 @@ const Game = (mode, restartGame) => {
           !val
             ? html`<button ${{ onClick: randomize }}>Randomize</button>
                 <button ${{ onClick: finishPlacing }}>Finish placing</button>
-                <div
-                  style="display: flex;"
-                  ${{
-                    $content: initBoard.bindValue(
-                      (state) =>
-                        html`${Board(size, state.player)}
-                        ${Board(size, state.enemy)}`
-                    ),
-                  }}
-                ></div>`
-            : html`<h2>Hello World</h2>`
+                <div style="display: flex;">
+                  ${Board({
+                    size,
+                    board: initBoard.value.player.getBoard(),
+                    cellProps: syncCellToBoard(),
+                  })}
+                  ${Board({
+                    size,
+                    board: initBoard.value.enemy.getBoard(),
+                    cellProps: syncCellToBoard('enemy'),
+                  })}
+                </div>`
+            : html`<div style="display: flex;">
+                ${PlayerBoard(0, size, initBoard.value.player, currentTurn)}
+                ${PlayerBoard(1, size, initBoard.value.enemy, currentTurn)}
+              </div>`
         ),
       }}
     ></div>

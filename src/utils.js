@@ -21,5 +21,22 @@ const $ = (query) => {
   return document.querySelector(query);
 };
 
+const determineCellClass = (cell, isPlayer) => {
+  switch (cell) {
+    case 'HIT':
+      return 'hit';
+    case 'MISS':
+      return 'missed';
+    case 'SUNK':
+      return 'sunk';
+    case undefined:
+      return 'occupied';
+    case null:
+      return '';
+    default:
+      return isPlayer ? 'ship' : '';
+  }
+};
+
 export default $;
-export { uuid };
+export { uuid, determineCellClass };

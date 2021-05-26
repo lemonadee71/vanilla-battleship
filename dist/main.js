@@ -31,6 +31,7 @@ const App = () => {
 
   const restartGame = () => {
     isGameStart.value = false;
+    mode = 'test';
   };
 
   return _component__WEBPACK_IMPORTED_MODULE_1__.html`<div>
@@ -78,6 +79,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _modules_Player__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./modules/Player */ "./src/modules/Player.js");
 /* harmony import */ var _difficulty_json__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./difficulty.json */ "./src/difficulty.json");
 /* harmony import */ var _ships_json__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./ships.json */ "./src/ships.json");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
+/* harmony import */ var _components_PlayerBoard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./components/PlayerBoard */ "./src/components/PlayerBoard.js");
+/* harmony import */ var _event__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./event */ "./src/event.js");
+
+
+
 
 
 
@@ -87,6 +94,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const Game = (mode, restartGame) => {
+  const aiPastMoves = [];
+  const currentTurn = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(0);
   const isFinishPlacing = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(false);
   const { size, ships } = _difficulty_json__WEBPACK_IMPORTED_MODULE_5__[mode];
 
@@ -115,7 +124,7 @@ const Game = (mode, restartGame) => {
       }
     }
 
-    return currentBoard.getBoard();
+    return currentBoard;
   };
 
   const initBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)({
@@ -134,6 +143,36 @@ const Game = (mode, restartGame) => {
     isFinishPlacing.value = true;
   };
 
+  const syncCellToBoard =
+    (player = 'player') =>
+    ([x, y]) => ({
+      $class: initBoard.bindValue(
+        (state) =>
+          `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_7__.determineCellClass)(
+            state[player].get(x, y),
+            player === 'player'
+          )}`
+      ),
+    });
+
+  const aiAttack = () => {
+    const move = (0,_modules_Player__WEBPACK_IMPORTED_MODULE_4__.doRandomAttack)(size, aiPastMoves).join('-');
+    (0,_utils__WEBPACK_IMPORTED_MODULE_7__.default)(`[data-board-name="player"] .cell[data-pos="${move}"]`).click();
+    aiPastMoves.push(move);
+  };
+
+  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('game over', (playerNum) => {
+    alert(`player ${playerNum} lose!`);
+    setTimeout(restartGame, 500);
+  });
+  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('next turn', () => {
+    currentTurn.value = +!currentTurn.value;
+
+    if (currentTurn.value) {
+      setTimeout(aiAttack, 500);
+    }
+  });
+
   return _component__WEBPACK_IMPORTED_MODULE_0__.html`
     <button ${{ onClick: restartGame }}>Restart</button>
     <div
@@ -142,17 +181,22 @@ const Game = (mode, restartGame) => {
           !val
             ? _component__WEBPACK_IMPORTED_MODULE_0__.html`<button ${{ onClick: randomize }}>Randomize</button>
                 <button ${{ onClick: finishPlacing }}>Finish placing</button>
-                <div
-                  style="display: flex;"
-                  ${{
-                    $content: initBoard.bindValue(
-                      (state) =>
-                        _component__WEBPACK_IMPORTED_MODULE_0__.html`${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)(size, state.player)}
-                        ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)(size, state.enemy)}`
-                    ),
-                  }}
-                ></div>`
-            : _component__WEBPACK_IMPORTED_MODULE_0__.html`<h2>Hello World</h2>`
+                <div style="display: flex;">
+                  ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)({
+                    size,
+                    board: initBoard.value.player.getBoard(),
+                    cellProps: syncCellToBoard(),
+                  })}
+                  ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)({
+                    size,
+                    board: initBoard.value.enemy.getBoard(),
+                    cellProps: syncCellToBoard('enemy'),
+                  })}
+                </div>`
+            : _component__WEBPACK_IMPORTED_MODULE_0__.html`<div style="display: flex;">
+                ${(0,_components_PlayerBoard__WEBPACK_IMPORTED_MODULE_8__.default)(0, size, initBoard.value.player, currentTurn)}
+                ${(0,_components_PlayerBoard__WEBPACK_IMPORTED_MODULE_8__.default)(1, size, initBoard.value.enemy, currentTurn)}
+              </div>`
         ),
       }}
     ></div>
@@ -579,45 +623,95 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../component */ "./src/component.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
 
 
-const Board = (size, board) => {
-  const determineCellClass = (cell) => {
-    switch (cell) {
-      case 'HIT':
-        return ' hit';
-      case 'MISS':
-        return ' missed';
-      case 'SUNK':
-        return ' sunk';
-      case undefined:
-        return ' occupied';
-      case null:
-        return '';
-      default:
-        return ' ship';
-    }
-  };
 
-  return _component__WEBPACK_IMPORTED_MODULE_0__.html`<div
-    id="grid"
+const Board = ({ name, size, board, clickHandler, cellProps }) =>
+  _component__WEBPACK_IMPORTED_MODULE_0__.html`<div
+    class="grid"
     style="grid-template-columns: repeat(${size}, 1fr);"
+    ${name ? `data-board-name="${name}"` : ''}
+    ${{ onClick: clickHandler }}
   >
     ${board
       .map((row, i) =>
         row.map(
           (cell, j) =>
-            `<div
-              data-pos="${`${i}-${j}`}"
-              class="${`cell${determineCellClass(cell)}`}"
+            _component__WEBPACK_IMPORTED_MODULE_0__.html`<div
+              data-pos="${i}-${j}"
+              class="cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(cell)}"
+              ${cellProps.call(null, [i, j])}
             ></div>`
         )
       )
       .flat()}
   </div>`;
-};
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Board);
+
+
+/***/ }),
+
+/***/ "./src/components/PlayerBoard.js":
+/*!***************************************!*\
+  !*** ./src/components/PlayerBoard.js ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../component */ "./src/component.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
+/* harmony import */ var _event__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../event */ "./src/event.js");
+/* harmony import */ var _Board__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Board */ "./src/components/Board.js");
+
+
+
+
+
+const PlayerBoard = (type, size, gameboard, currentTurn) => {
+  const thisBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(gameboard.getBoard());
+
+  const clickHandler = (e) => {
+    if (!e.target.matches('.cell')) return;
+    if (type === currentTurn.value) return;
+
+    try {
+      const [x, y] = e.target.getAttribute('data-pos').split('-');
+
+      gameboard.receiveAttack(x, y);
+      thisBoard.value = gameboard.getBoard();
+
+      if (gameboard.isGameOver()) {
+        _event__WEBPACK_IMPORTED_MODULE_2__.default.emit('game over', type);
+        return;
+      }
+
+      _event__WEBPACK_IMPORTED_MODULE_2__.default.emit('next turn');
+    } catch (error) {
+      console.warn(error.toString());
+    }
+  };
+
+  const syncCellToBoard = ([x, y]) => ({
+    $class: thisBoard.bindValue(
+      (board) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(board[x][y], !type)}`
+    ),
+  });
+
+  return (0,_Board__WEBPACK_IMPORTED_MODULE_3__.default)({
+    size,
+    clickHandler,
+    name: !type ? 'player' : 'enemy',
+    board: thisBoard.value,
+    cellProps: syncCellToBoard,
+  });
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (PlayerBoard);
 
 
 /***/ }),
@@ -629,6 +723,63 @@ const Board = (size, board) => {
 /***/ ((module) => {
 
 module.exports = JSON.parse('{"test":{"size":5,"ships":[{"name":"battleship","number":1}]},"normal":{"size":10,"ships":[{"name":"battleship","number":1},{"name":"destroyer","number":1},{"name":"submarine","number":1},{"name":"patrolBoat","number":3},{"name":"boat","number":3}]},"medium":{"size":12,"ships":[{"name":"carrier","number":1},{"name":"battleship","number":1},{"name":"destroyer","number":2},{"name":"submarine","number":1},{"name":"patrolBoat","number":3},{"name":"boat","number":3}]},"hard":{"size":16,"ships":[{"name":"carrier","number":1},{"name":"battleship","number":1},{"name":"destroyer","number":2},{"name":"submarine","number":2},{"name":"patrolBoat","number":4},{"name":"boat","number":4}]}}');
+
+/***/ }),
+
+/***/ "./src/event.js":
+/*!**********************!*\
+  !*** ./src/event.js ***!
+  \**********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+class EventEmitter {
+  constructor() {
+    this.events = new Map();
+  }
+
+  on(eventName, fn, options) {
+    if (!this.events.has(eventName)) {
+      this.events.set(eventName, []);
+    }
+
+    this.events.get(eventName).push({ fn, options });
+  }
+
+  off(eventName, fn) {
+    const handlers = this.events
+      .get(eventName)
+      .filter((handler) => handler.fn !== fn);
+
+    console.log(`Shutting off ${eventName}...`);
+    this.events.set(eventName, handlers);
+  }
+
+  clear() {
+    this.events.clear();
+  }
+
+  emit(eventName, payload = null) {
+    console.log(`${eventName} event emitted... `);
+    const handlers = this.events.get(eventName) || [];
+
+    handlers.forEach((handler) => {
+      handler.fn.call(null, payload);
+
+      if (handler.options && handler.options.once) {
+        this.off(eventName, handler.fn);
+      }
+    });
+  }
+}
+
+const event = new EventEmitter();
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (event);
+
 
 /***/ }),
 
@@ -909,7 +1060,8 @@ module.exports = JSON.parse('{"carrier":{"name":"carrier","length":5},"battleshi
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
-/* harmony export */   "uuid": () => (/* binding */ uuid)
+/* harmony export */   "uuid": () => (/* binding */ uuid),
+/* harmony export */   "determineCellClass": () => (/* binding */ determineCellClass)
 /* harmony export */ });
 const uuid = (length = 10) => Math.random().toString(36).substr(2, length);
 
@@ -932,6 +1084,23 @@ const $ = (query) => {
   }
 
   return document.querySelector(query);
+};
+
+const determineCellClass = (cell, isPlayer) => {
+  switch (cell) {
+    case 'HIT':
+      return 'hit';
+    case 'MISS':
+      return 'missed';
+    case 'SUNK':
+      return 'sunk';
+    case undefined:
+      return 'occupied';
+    case null:
+      return '';
+    default:
+      return isPlayer ? 'ship' : '';
+  }
 };
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ($);

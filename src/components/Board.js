@@ -1,39 +1,25 @@
 import { html } from '../component';
+import { determineCellClass } from '../utils';
 
-const Board = (size, board) => {
-  const determineCellClass = (cell) => {
-    switch (cell) {
-      case 'HIT':
-        return ' hit';
-      case 'MISS':
-        return ' missed';
-      case 'SUNK':
-        return ' sunk';
-      case undefined:
-        return ' occupied';
-      case null:
-        return '';
-      default:
-        return ' ship';
-    }
-  };
-
-  return html`<div
-    id="grid"
+const Board = ({ name, size, board, clickHandler, cellProps }) =>
+  html`<div
+    class="grid"
     style="grid-template-columns: repeat(${size}, 1fr);"
+    ${name ? `data-board-name="${name}"` : ''}
+    ${{ onClick: clickHandler }}
   >
     ${board
       .map((row, i) =>
         row.map(
           (cell, j) =>
-            `<div
-              data-pos="${`${i}-${j}`}"
-              class="${`cell${determineCellClass(cell)}`}"
+            html`<div
+              data-pos="${i}-${j}"
+              class="cell ${determineCellClass(cell)}"
+              ${cellProps.call(null, [i, j])}
             ></div>`
         )
       )
       .flat()}
   </div>`;
-};
 
 export default Board;

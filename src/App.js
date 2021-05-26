@@ -15,6 +15,7 @@ const App = () => {
 
   const restartGame = () => {
     isGameStart.value = false;
+    mode = 'test';
   };
 
   return html`<div>
