@@ -17,6 +17,7 @@ const App = () => {
   const restartGame = () => {
     isGameStart.value = false;
     mode = 'test';
+    numberOfEnemies = 1;
   };
 
   const changeNumberOfEnemies = (e) => {

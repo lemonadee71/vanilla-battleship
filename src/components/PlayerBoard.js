@@ -22,8 +22,7 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
       thisBoard.value = gameboard.getBoard();
 
       if (gameboard.isGameOver()) {
-        setTimeout(() => event.emit('player defeated', number), 300);
-        return;
+        event.emit('player defeated', number);
       }
 
       event.emit('attack received', number);
@@ -34,8 +33,7 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
 
   const cellProps = ([x, y]) => ({
     $class: thisBoard.bindValue(
-      (board) =>
-        `cell ${determineCellClass(board[x][y], number === currentTurn.value)}`
+      (board) => `cell ${determineCellClass(board[x][y], type === 'player')}`
     ),
   });
 

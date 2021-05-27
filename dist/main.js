@@ -33,6 +33,7 @@ const App = () => {
   const restartGame = () => {
     isGameStart.value = false;
     mode = 'test';
+    numberOfEnemies = 1;
   };
 
   const changeNumberOfEnemies = (e) => {
@@ -179,6 +180,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   };
 
   const finishPlacing = () => {
+    // TODO: Allow multiple placing for multiple players
     allPlayers.get(1).gameboard = initBoard.value.player;
     isFinishPlacing.value = true;
   };
@@ -203,8 +205,13 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     const alive = [...allPlayers.values()].filter((p) => !p.isDefeated);
     const isGameOver = alive && alive.length === 1;
 
-    if (!isGameOver) (0,_utils__WEBPACK_IMPORTED_MODULE_7__.default)(`[data-board-num="${playerNumber}"`).remove();
-    if (isGameOver) finishGame();
+    alert(`Player ${playerNumber} is defeated`);
+
+    if (!isGameOver) {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_7__.default)(`[data-board-num="${playerNumber}"`).remove();
+    } else {
+      finishGame();
+    }
   };
 
   const nextTurn = (target) => {
@@ -216,15 +223,17 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     } while (defeatedPlayers.includes(currentTurn.value));
 
     if (currentTurn.value > numberOfEnemies + 1) {
-      currentTurn.value = 1;
+      currentTurn.value = [...allPlayers.values()]
+        .map((player) => player.number)
+        .filter((num) => !defeatedPlayers.includes(num))[0];
     }
 
     setTimeout(() => {
+      isInTransition.value = false;
+
       _event__WEBPACK_IMPORTED_MODULE_9__.default.emit('next turn', currentTurn.value);
       announce(`Player ${currentTurn.value} turn`);
-
-      isInTransition.value = false;
-    }, 500);
+    }, 300);
   };
 
   const restartGame = () => {
@@ -239,6 +248,8 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   // Initialize game
   _event__WEBPACK_IMPORTED_MODULE_9__.default.on('player defeated', playerDefeated);
   _event__WEBPACK_IMPORTED_MODULE_9__.default.on('attack received', nextTurn);
+
+  // Initialize players
   generatePlayers();
   [...allPlayers.values()].map((player) => player.init && player.init());
 
@@ -257,7 +268,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
             ? _component__WEBPACK_IMPORTED_MODULE_0__.html`<button ${{ onClick: randomize }}>Randomize</button>
                 <button ${{ onClick: finishPlacing }}>Finish placing</button>
                 <h2>Place your ships</h2>
-                <div style="display: flex;">
+                <div class="container">
                   ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)({
                     size,
                     cellProps,
@@ -265,7 +276,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
                   })}
                 </div>`
             : _component__WEBPACK_IMPORTED_MODULE_0__.html`<h2 id="announcement">Player ${currentTurn.value} turn</h2>
-                <div style="display: flex;">
+                <div class="container">
                   ${[...allPlayers.values()].map((player) =>
                     (0,_components_PlayerBoard__WEBPACK_IMPORTED_MODULE_8__.default)(player, currentTurn, isInTransition)
                   )}
@@ -764,8 +775,7 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
       thisBoard.value = gameboard.getBoard();
 
       if (gameboard.isGameOver()) {
-        setTimeout(() => _event__WEBPACK_IMPORTED_MODULE_2__.default.emit('player defeated', number), 300);
-        return;
+        _event__WEBPACK_IMPORTED_MODULE_2__.default.emit('player defeated', number);
       }
 
       _event__WEBPACK_IMPORTED_MODULE_2__.default.emit('attack received', number);
@@ -776,8 +786,7 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
 
   const cellProps = ([x, y]) => ({
     $class: thisBoard.bindValue(
-      (board) =>
-        `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(board[x][y], number === currentTurn.value)}`
+      (board) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(board[x][y], type === 'player')}`
     ),
   });
 
@@ -822,9 +831,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// TODO: ai is not really working
 const createAI = (playerNumber, numberOfPlayers, boardSize) => {
-  const pastMoves = [];
+  const allMoves = [...new Array(numberOfPlayers).fill([])].map((arr, i) => ({
+    number: i + 1,
+    pastMoves: [...arr],
+  }));
   const defeatedPlayers = [];
 
   const _determinePlayerToAttack = () => {
@@ -833,8 +844,8 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
     do {
       playerToAttack = Math.floor(Math.random() * numberOfPlayers) + 1;
     } while (
-      defeatedPlayers.includes(playerToAttack) &&
-      playerToAttack !== playerNumber
+      defeatedPlayers.includes(playerToAttack) ||
+      playerToAttack === playerNumber
     );
 
     return playerToAttack;
@@ -843,18 +854,25 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
   const _attack = (currentTurn) => {
     if (currentTurn !== playerNumber) return;
 
-    console.log('ai attacking...');
-
     const playerToAttack = _determinePlayerToAttack();
+    const { pastMoves } = allMoves.filter(
+      (obj) => obj.number === playerToAttack
+    )[0];
     const move = (0,_modules_Player__WEBPACK_IMPORTED_MODULE_0__.doRandomAttack)(boardSize, pastMoves).join('-');
     const cell = (0,_utils__WEBPACK_IMPORTED_MODULE_1__.default)(
       `[data-board-num="${playerToAttack}"] .cell[data-pos="${move}"]`
     );
 
-    cell.click();
     pastMoves.push(move);
 
-    console.log(playerToAttack, playerNumber, cell);
+    if (['cell hit', 'cell missed'].includes(cell.className)) {
+      _attack(currentTurn);
+      return;
+    }
+
+    cell.click();
+
+    console.log({ playerNumber, playerToAttack, move });
   };
 
   const _addDefeatedPlayer = (player) => defeatedPlayers.push(player);
@@ -908,7 +926,6 @@ class EventEmitter {
       .get(eventName)
       .filter((handler) => handler.fn !== fn);
 
-    console.log(`Shutting off ${eventName}...`);
     this.events.set(eventName, handlers);
   }
 
@@ -916,8 +933,11 @@ class EventEmitter {
     this.events.clear();
   }
 
+  delete(eventName) {
+    this.events.delete(eventName);
+  }
+
   emit(eventName, payload = null) {
-    console.log(`${eventName} event emitted... `);
     const handlers = this.events.get(eventName) || [];
 
     handlers.forEach((handler) => {
@@ -1241,7 +1261,7 @@ const $ = (query) => {
   return document.querySelector(query);
 };
 
-const determineCellClass = (cell, isMyTurn) => {
+const determineCellClass = (cell, condition = false) => {
   switch (cell) {
     case 'HIT':
       return 'hit';
@@ -1254,8 +1274,7 @@ const determineCellClass = (cell, isMyTurn) => {
     case null:
       return '';
     default:
-      return 'ship';
-    // return isMyTurn ? 'ship' : '';
+      return condition ? 'ship' : '';
   }
 };
 

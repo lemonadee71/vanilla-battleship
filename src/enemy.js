@@ -2,9 +2,11 @@ import { doRandomAttack } from './modules/Player';
 import $ from './utils';
 import event from './event';
 
-// TODO: ai is not really working
 const createAI = (playerNumber, numberOfPlayers, boardSize) => {
-  const pastMoves = [];
+  const allMoves = [...new Array(numberOfPlayers).fill([])].map((arr, i) => ({
+    number: i + 1,
+    pastMoves: [...arr],
+  }));
   const defeatedPlayers = [];
 
   const _determinePlayerToAttack = () => {
@@ -13,8 +15,8 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
     do {
       playerToAttack = Math.floor(Math.random() * numberOfPlayers) + 1;
     } while (
-      defeatedPlayers.includes(playerToAttack) &&
-      playerToAttack !== playerNumber
+      defeatedPlayers.includes(playerToAttack) ||
+      playerToAttack === playerNumber
     );
 
     return playerToAttack;
@@ -23,18 +25,25 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
   const _attack = (currentTurn) => {
     if (currentTurn !== playerNumber) return;
 
-    console.log('ai attacking...');
-
     const playerToAttack = _determinePlayerToAttack();
+    const { pastMoves } = allMoves.filter(
+      (obj) => obj.number === playerToAttack
+    )[0];
     const move = doRandomAttack(boardSize, pastMoves).join('-');
     const cell = $(
       `[data-board-num="${playerToAttack}"] .cell[data-pos="${move}"]`
     );
 
-    cell.click();
     pastMoves.push(move);
 
-    console.log(playerToAttack, playerNumber, cell);
+    if (['cell hit', 'cell missed'].includes(cell.className)) {
+      _attack(currentTurn);
+      return;
+    }
+
+    cell.click();
+
+    console.log({ playerNumber, playerToAttack, move });
   };
 
   const _addDefeatedPlayer = (player) => defeatedPlayers.push(player);

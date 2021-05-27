@@ -16,7 +16,6 @@ class EventEmitter {
       .get(eventName)
       .filter((handler) => handler.fn !== fn);
 
-    console.log(`Shutting off ${eventName}...`);
     this.events.set(eventName, handlers);
   }
 
@@ -24,8 +23,11 @@ class EventEmitter {
     this.events.clear();
   }
 
+  delete(eventName) {
+    this.events.delete(eventName);
+  }
+
   emit(eventName, payload = null) {
-    console.log(`${eventName} event emitted... `);
     const handlers = this.events.get(eventName) || [];
 
     handlers.forEach((handler) => {

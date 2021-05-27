@@ -80,6 +80,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   };
 
   const finishPlacing = () => {
+    // TODO: Allow multiple placing for multiple players
     allPlayers.get(1).gameboard = initBoard.value.player;
     isFinishPlacing.value = true;
   };
@@ -104,8 +105,13 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     const alive = [...allPlayers.values()].filter((p) => !p.isDefeated);
     const isGameOver = alive && alive.length === 1;
 
-    if (!isGameOver) $(`[data-board-num="${playerNumber}"`).remove();
-    if (isGameOver) finishGame();
+    alert(`Player ${playerNumber} is defeated`);
+
+    if (!isGameOver) {
+      $(`[data-board-num="${playerNumber}"`).remove();
+    } else {
+      finishGame();
+    }
   };
 
   const nextTurn = (target) => {
@@ -117,15 +123,17 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     } while (defeatedPlayers.includes(currentTurn.value));
 
     if (currentTurn.value > numberOfEnemies + 1) {
-      currentTurn.value = 1;
+      currentTurn.value = [...allPlayers.values()]
+        .map((player) => player.number)
+        .filter((num) => !defeatedPlayers.includes(num))[0];
     }
 
     setTimeout(() => {
+      isInTransition.value = false;
+
       event.emit('next turn', currentTurn.value);
       announce(`Player ${currentTurn.value} turn`);
-
-      isInTransition.value = false;
-    }, 500);
+    }, 300);
   };
 
   const restartGame = () => {
@@ -140,6 +148,8 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   // Initialize game
   event.on('player defeated', playerDefeated);
   event.on('attack received', nextTurn);
+
+  // Initialize players
   generatePlayers();
   [...allPlayers.values()].map((player) => player.init && player.init());
 
@@ -158,7 +168,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
             ? html`<button ${{ onClick: randomize }}>Randomize</button>
                 <button ${{ onClick: finishPlacing }}>Finish placing</button>
                 <h2>Place your ships</h2>
-                <div style="display: flex;">
+                <div class="container">
                   ${Board({
                     size,
                     cellProps,
@@ -166,7 +176,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
                   })}
                 </div>`
             : html`<h2 id="announcement">Player ${currentTurn.value} turn</h2>
-                <div style="display: flex;">
+                <div class="container">
                   ${[...allPlayers.values()].map((player) =>
                     PlayerBoard(player, currentTurn, isInTransition)
                   )}
