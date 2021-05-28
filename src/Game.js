@@ -1,14 +1,11 @@
 import { createState, html } from './component';
-import Board from './components/Board';
-import Ship from './modules/Ship';
-import Gameboard from './modules/Gameboard';
-import { doRandomPlacing } from './modules/Player';
 import difficulty from './difficulty.json';
-import allShipDetails from './ships.json';
-import $, { determineCellClass, uuid } from './utils';
+import $, { uuid } from './utils';
+import placeShipsInRandom from './placeShips';
 import PlayerBoard from './components/PlayerBoard';
 import event from './event';
 import createAI from './enemy';
+import PreGame from './PreGame';
 
 const Game = (mode, numberOfEnemies, restartHandler) => {
   const isInTransition = { value: false };
@@ -19,33 +16,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   const allPlayers = new Map();
   const defeatedPlayers = [];
 
-  const placeShipsInRandom = () => {
-    const currentBoard = Gameboard(size);
-
-    const allShips = [...ships];
-    let currentShip = null;
-
-    while (allShips.length) {
-      currentShip = allShips.shift();
-
-      let currentCount = currentShip.number;
-      while (currentCount) {
-        const move = doRandomPlacing(size);
-        const shipDetails = allShipDetails[currentShip.name];
-        const ship = new Ship(shipDetails.name, shipDetails.length);
-
-        try {
-          currentBoard.placeShip({ ship, ...move });
-          currentCount -= 1;
-        } catch (error) {
-          // console.warn(error.toString());
-          continue;
-        }
-      }
-    }
-
-    return currentBoard;
-  };
+  const playerBoard = createState(placeShipsInRandom(size, ships));
 
   const generatePlayers = () => {
     for (let i = 1; i < numberOfEnemies + 2; i++) {
@@ -63,26 +34,10 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
         init,
         destroy,
         number: i,
-        gameboard: type === 'computer' ? placeShipsInRandom() : null,
+        gameboard: type === 'computer' ? placeShipsInRandom(size, ships) : null,
         isDefeated: false,
       });
     }
-  };
-
-  const initBoard = createState({
-    player: placeShipsInRandom(),
-  });
-
-  const randomize = () => {
-    initBoard.value = {
-      player: placeShipsInRandom(),
-    };
-  };
-
-  const finishPlacing = () => {
-    // TODO: Allow multiple placing for multiple players
-    allPlayers.get(1).gameboard = initBoard.value.player;
-    isFinishPlacing.value = true;
   };
 
   const announce = (text) => {
@@ -154,11 +109,11 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   generatePlayers();
   [...allPlayers.values()].map((player) => player.init && player.init());
 
-  const cellProps = ([x, y]) => ({
-    $class: initBoard.bindValue(
-      (state) => `cell ${determineCellClass(state.player.get(x, y), true)}`
-    ),
-  });
+  const finishPlacing = () => {
+    // TODO: Allow multiple placing for multiple players
+    allPlayers.get(1).gameboard = playerBoard.value;
+    isFinishPlacing.value = true;
+  };
 
   return html`
     <button ${{ onClick: restartGame }}>Restart</button>
@@ -166,16 +121,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
       ${{
         $content: isFinishPlacing.bindValue((val) =>
           !val
-            ? html`<button ${{ onClick: randomize }}>Randomize</button>
-                <button ${{ onClick: finishPlacing }}>Finish placing</button>
-                <h2>Place your ships</h2>
-                <div class="container">
-                  ${Board({
-                    size,
-                    cellProps,
-                    board: initBoard.value.player.getBoard(),
-                  })}
-                </div>`
+            ? PreGame(playerBoard, size, ships, finishPlacing)
             : html`<h2 id="announcement">Player ${currentTurn.value} turn</h2>
                 <div class="container">
                   ${[...allPlayers.values()].map((player) =>

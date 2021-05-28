@@ -11,6 +11,11 @@ const App = () => {
   };
 
   const startGame = () => {
+    if (numberOfEnemies > 9) {
+      alert('Max number of enemies is 9.');
+      return;
+    }
+
     isGameStart.value = true;
   };
 
@@ -44,7 +49,7 @@ const App = () => {
                   placeholder="Number of enemy computer"
                   type="number"
                   min="1"
-                  max="10"
+                  max="9"
                   ${{ onChange: changeNumberOfEnemies }}
                 />
                 <button ${{ onClick: startGame }}>Start game</button>
