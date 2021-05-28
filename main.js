@@ -27,6 +27,11 @@ const App = () => {
   };
 
   const startGame = () => {
+    if (numberOfEnemies > 9) {
+      alert('Max number of enemies is 9.');
+      return;
+    }
+
     isGameStart.value = true;
   };
 
@@ -60,7 +65,7 @@ const App = () => {
                   placeholder="Number of enemy computer"
                   type="number"
                   min="1"
-                  max="10"
+                  max="9"
                   ${{ onChange: changeNumberOfEnemies }}
                 />
                 <button ${{ onClick: startGame }}>Start game</button>
@@ -88,19 +93,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./component */ "./src/component.js");
-/* harmony import */ var _components_Board__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/Board */ "./src/components/Board.js");
-/* harmony import */ var _modules_Ship__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/Ship */ "./src/modules/Ship.js");
-/* harmony import */ var _modules_Gameboard__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./modules/Gameboard */ "./src/modules/Gameboard.js");
-/* harmony import */ var _modules_Player__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./modules/Player */ "./src/modules/Player.js");
-/* harmony import */ var _difficulty_json__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./difficulty.json */ "./src/difficulty.json");
-/* harmony import */ var _ships_json__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./ships.json */ "./src/ships.json");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
-/* harmony import */ var _components_PlayerBoard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./components/PlayerBoard */ "./src/components/PlayerBoard.js");
-/* harmony import */ var _event__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./event */ "./src/event.js");
-/* harmony import */ var _enemy__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./enemy */ "./src/enemy.js");
-
-
-
+/* harmony import */ var _difficulty_json__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./difficulty.json */ "./src/difficulty.json");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
+/* harmony import */ var _placeShips__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./placeShips */ "./src/placeShips.js");
+/* harmony import */ var _components_PlayerBoard__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./components/PlayerBoard */ "./src/components/PlayerBoard.js");
+/* harmony import */ var _event__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./event */ "./src/event.js");
+/* harmony import */ var _enemy__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./enemy */ "./src/enemy.js");
+/* harmony import */ var _PreGame__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./PreGame */ "./src/PreGame.js");
 
 
 
@@ -115,46 +114,20 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   const isFinishPlacing = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(false);
   const currentTurn = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(1);
 
-  const { size, ships } = _difficulty_json__WEBPACK_IMPORTED_MODULE_5__[mode];
+  const { size, ships } = _difficulty_json__WEBPACK_IMPORTED_MODULE_1__[mode];
   const allPlayers = new Map();
   const defeatedPlayers = [];
 
-  const placeShipsInRandom = () => {
-    const currentBoard = (0,_modules_Gameboard__WEBPACK_IMPORTED_MODULE_3__.default)(size);
-
-    const allShips = [...ships];
-    let currentShip = null;
-
-    while (allShips.length) {
-      currentShip = allShips.shift();
-
-      let currentCount = currentShip.number;
-      while (currentCount) {
-        const move = (0,_modules_Player__WEBPACK_IMPORTED_MODULE_4__.doRandomPlacing)(size);
-        const shipDetails = _ships_json__WEBPACK_IMPORTED_MODULE_6__[currentShip.name];
-        const ship = new _modules_Ship__WEBPACK_IMPORTED_MODULE_2__.default(shipDetails.name, shipDetails.length);
-
-        try {
-          currentBoard.placeShip({ ship, ...move });
-          currentCount -= 1;
-        } catch (error) {
-          // console.warn(error.toString());
-          continue;
-        }
-      }
-    }
-
-    return currentBoard;
-  };
+  const playerBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)((0,_placeShips__WEBPACK_IMPORTED_MODULE_3__.default)(size, ships));
 
   const generatePlayers = () => {
     for (let i = 1; i < numberOfEnemies + 2; i++) {
-      const id = (0,_utils__WEBPACK_IMPORTED_MODULE_7__.uuid)(4);
+      const id = (0,_utils__WEBPACK_IMPORTED_MODULE_2__.uuid)(4);
       // TODO: allow users to choose the player type
       const type = i === 1 ? 'player' : 'computer';
       const { init, destroy } =
         type === 'computer'
-          ? (0,_enemy__WEBPACK_IMPORTED_MODULE_10__.default)(i, numberOfEnemies + 1, size)
+          ? (0,_enemy__WEBPACK_IMPORTED_MODULE_6__.default)(i, numberOfEnemies + 1, size)
           : { init: null, destroy: null };
 
       allPlayers.set(i, {
@@ -163,30 +136,14 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
         init,
         destroy,
         number: i,
-        gameboard: type === 'computer' ? placeShipsInRandom() : null,
+        gameboard: type === 'computer' ? (0,_placeShips__WEBPACK_IMPORTED_MODULE_3__.default)(size, ships) : null,
         isDefeated: false,
       });
     }
   };
 
-  const initBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)({
-    player: placeShipsInRandom(),
-  });
-
-  const randomize = () => {
-    initBoard.value = {
-      player: placeShipsInRandom(),
-    };
-  };
-
-  const finishPlacing = () => {
-    // TODO: Allow multiple placing for multiple players
-    allPlayers.get(1).gameboard = initBoard.value.player;
-    isFinishPlacing.value = true;
-  };
-
   const announce = (text) => {
-    (0,_utils__WEBPACK_IMPORTED_MODULE_7__.default)('#announcement').textContent = text;
+    (0,_utils__WEBPACK_IMPORTED_MODULE_2__.default)('#announcement').textContent = text;
   };
 
   const finishGame = () => {
@@ -209,7 +166,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     alert(`Player ${playerNumber} is defeated`);
 
     if (!isGameOver) {
-      (0,_utils__WEBPACK_IMPORTED_MODULE_7__.default)(`[data-board-num="${playerNumber}"`).remove();
+      (0,_utils__WEBPACK_IMPORTED_MODULE_2__.default)(`[data-board-num="${playerNumber}"`).remove();
     } else {
       finishGame();
     }
@@ -232,14 +189,14 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     setTimeout(() => {
       isInTransition.value = false;
 
-      _event__WEBPACK_IMPORTED_MODULE_9__.default.emit('next turn', currentTurn.value);
+      _event__WEBPACK_IMPORTED_MODULE_5__.default.emit('next turn', currentTurn.value);
       announce(`Player ${currentTurn.value} turn`);
     }, 300);
   };
 
   const restartGame = () => {
-    _event__WEBPACK_IMPORTED_MODULE_9__.default.off('player defeated', playerDefeated);
-    _event__WEBPACK_IMPORTED_MODULE_9__.default.off('attack received', nextTurn);
+    _event__WEBPACK_IMPORTED_MODULE_5__.default.off('player defeated', playerDefeated);
+    _event__WEBPACK_IMPORTED_MODULE_5__.default.off('attack received', nextTurn);
     [...allPlayers.values()].map(
       (player) => player.destroy && player.destroy()
     );
@@ -247,18 +204,18 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   };
 
   // Initialize game
-  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('player defeated', playerDefeated);
-  _event__WEBPACK_IMPORTED_MODULE_9__.default.on('attack received', nextTurn);
+  _event__WEBPACK_IMPORTED_MODULE_5__.default.on('player defeated', playerDefeated);
+  _event__WEBPACK_IMPORTED_MODULE_5__.default.on('attack received', nextTurn);
 
   // Initialize players
   generatePlayers();
   [...allPlayers.values()].map((player) => player.init && player.init());
 
-  const cellProps = ([x, y]) => ({
-    $class: initBoard.bindValue(
-      (state) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_7__.determineCellClass)(state.player.get(x, y), true)}`
-    ),
-  });
+  const finishPlacing = () => {
+    // TODO: Allow multiple placing for multiple players
+    allPlayers.get(1).gameboard = playerBoard.value;
+    isFinishPlacing.value = true;
+  };
 
   return _component__WEBPACK_IMPORTED_MODULE_0__.html`
     <button ${{ onClick: restartGame }}>Restart</button>
@@ -266,20 +223,11 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
       ${{
         $content: isFinishPlacing.bindValue((val) =>
           !val
-            ? _component__WEBPACK_IMPORTED_MODULE_0__.html`<button ${{ onClick: randomize }}>Randomize</button>
-                <button ${{ onClick: finishPlacing }}>Finish placing</button>
-                <h2>Place your ships</h2>
-                <div class="container">
-                  ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_1__.default)({
-                    size,
-                    cellProps,
-                    board: initBoard.value.player.getBoard(),
-                  })}
-                </div>`
+            ? (0,_PreGame__WEBPACK_IMPORTED_MODULE_7__.default)(playerBoard, size, ships, finishPlacing)
             : _component__WEBPACK_IMPORTED_MODULE_0__.html`<h2 id="announcement">Player ${currentTurn.value} turn</h2>
                 <div class="container">
                   ${[...allPlayers.values()].map((player) =>
-                    (0,_components_PlayerBoard__WEBPACK_IMPORTED_MODULE_8__.default)(player, currentTurn, isInTransition)
+                    (0,_components_PlayerBoard__WEBPACK_IMPORTED_MODULE_4__.default)(player, currentTurn, isInTransition)
                   )}
                 </div>`
         ),
@@ -289,6 +237,53 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
 };
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Game);
+
+
+/***/ }),
+
+/***/ "./src/PreGame.js":
+/*!************************!*\
+  !*** ./src/PreGame.js ***!
+  \************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./component */ "./src/component.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
+/* harmony import */ var _placeShips__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./placeShips */ "./src/placeShips.js");
+/* harmony import */ var _components_Board__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/Board */ "./src/components/Board.js");
+
+
+
+
+
+const PreGame = (playerBoard, size, ships, finish) => {
+  const randomize = () => {
+    playerBoard.value = (0,_placeShips__WEBPACK_IMPORTED_MODULE_2__.default)(size, ships);
+  };
+
+  const cellProps = ([x, y]) => ({
+    $class: playerBoard.bindValue(
+      (state) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(state.get(x, y), true)}`
+    ),
+  });
+
+  return _component__WEBPACK_IMPORTED_MODULE_0__.html`<button ${{ onClick: randomize }}>Randomize</button>
+    <button ${{ onClick: finish }}>Finish placing</button>
+    <h2>Place your ships</h2>
+    <div class="container">
+      ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_3__.default)({
+        size,
+        cellProps,
+        board: playerBoard.value.getBoard(),
+      })}
+    </div>`;
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (PreGame);
 
 
 /***/ }),
@@ -1229,6 +1224,58 @@ class Ship {
 }
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Ship);
+
+
+/***/ }),
+
+/***/ "./src/placeShips.js":
+/*!***************************!*\
+  !*** ./src/placeShips.js ***!
+  \***************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _modules_Ship__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./modules/Ship */ "./src/modules/Ship.js");
+/* harmony import */ var _modules_Gameboard__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./modules/Gameboard */ "./src/modules/Gameboard.js");
+/* harmony import */ var _modules_Player__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/Player */ "./src/modules/Player.js");
+/* harmony import */ var _ships_json__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ships.json */ "./src/ships.json");
+
+
+
+
+
+const placeShipsInRandom = (size, ships) => {
+  const currentBoard = (0,_modules_Gameboard__WEBPACK_IMPORTED_MODULE_1__.default)(size);
+
+  const allShips = [...ships];
+  let currentShip = null;
+
+  while (allShips.length) {
+    currentShip = allShips.shift();
+
+    let currentCount = currentShip.number;
+    while (currentCount) {
+      const move = (0,_modules_Player__WEBPACK_IMPORTED_MODULE_2__.doRandomPlacing)(size);
+      const shipDetails = _ships_json__WEBPACK_IMPORTED_MODULE_3__[currentShip.name];
+      const ship = new _modules_Ship__WEBPACK_IMPORTED_MODULE_0__.default(shipDetails.name, shipDetails.length);
+
+      try {
+        currentBoard.placeShip({ ship, ...move });
+        currentCount -= 1;
+      } catch (error) {
+        // console.warn(error.toString());
+        continue;
+      }
+    }
+  }
+
+  return currentBoard;
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (placeShipsInRandom);
 
 
 /***/ }),
