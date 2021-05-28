@@ -8,6 +8,10 @@
   grid-gap: 1px 1px;
 }
 
+.grid.highlighted {
+  border: 3px solid rgb(206, 18, 18);
+}
+
 .container {
   display: flex;
   flex-wrap: wrap;

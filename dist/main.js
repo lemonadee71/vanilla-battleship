@@ -111,9 +111,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const Game = (mode, numberOfEnemies, restartHandler) => {
-  const currentTurn = { value: 1 };
   const isInTransition = { value: false };
   const isFinishPlacing = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(false);
+  const currentTurn = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(1);
 
   const { size, ships } = _difficulty_json__WEBPACK_IMPORTED_MODULE_5__[mode];
   const allPlayers = new Map();
@@ -191,7 +191,8 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
 
   const finishGame = () => {
     alert(`Player ${currentTurn.value} wins!`);
-    setTimeout(restartGame, 500);
+    restartGame();
+    // setTimeout(restartGame, 500);
   };
 
   const playerDefeated = (playerNumber) => {
@@ -711,12 +712,21 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const Board = ({ number, size, board, clickHandler, cellProps }) =>
+// TODO: make this a custom component if needed
+const Board = ({
+  number,
+  size,
+  board,
+  clickHandler,
+  boardProps = null,
+  cellProps,
+}) =>
   _component__WEBPACK_IMPORTED_MODULE_0__.html`<div
     class="grid"
     style="grid-template-columns: repeat(${size}, 1fr);"
     ${number ? `data-board-num="${number}"` : ''}
     ${{ onClick: clickHandler }}
+    ${boardProps || ''}
   >
     ${board
       .map((row, i) =>
@@ -790,10 +800,17 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
     ),
   });
 
+  const boardProps = {
+    '$style:border': currentTurn.bindValue((turn) =>
+      turn === number ? '3px solid rgb(206, 18, 18)' : '3px solid black'
+    ),
+  };
+
   return (0,_Board__WEBPACK_IMPORTED_MODULE_3__.default)({
     number,
     clickHandler,
     cellProps,
+    boardProps,
     board: thisBoard.value,
     size: gameboard.size,
   });
@@ -832,9 +849,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const createAI = (playerNumber, numberOfPlayers, boardSize) => {
-  const allMoves = [...new Array(numberOfPlayers).fill([])].map((arr, i) => ({
+  const allMoves = [...new Array(numberOfPlayers).fill(null)].map((arr, i) => ({
     number: i + 1,
-    pastMoves: [...arr],
+    pastMoves: [],
   }));
   const defeatedPlayers = [];
 
@@ -855,9 +872,7 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
     if (currentTurn !== playerNumber) return;
 
     const playerToAttack = _determinePlayerToAttack();
-    const { pastMoves } = allMoves.filter(
-      (obj) => obj.number === playerToAttack
-    )[0];
+    const { pastMoves } = allMoves.find((obj) => obj.number === playerToAttack);
     const move = (0,_modules_Player__WEBPACK_IMPORTED_MODULE_0__.doRandomAttack)(boardSize, pastMoves).join('-');
     const cell = (0,_utils__WEBPACK_IMPORTED_MODULE_1__.default)(
       `[data-board-num="${playerToAttack}"] .cell[data-pos="${move}"]`
@@ -872,7 +887,9 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
 
     cell.click();
 
-    console.log({ playerNumber, playerToAttack, move });
+    console.log(
+      `Player ${playerNumber} attacks cell ${move} of player ${playerToAttack}'s board`
+    );
   };
 
   const _addDefeatedPlayer = (player) => defeatedPlayers.push(player);

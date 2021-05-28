@@ -3,9 +3,9 @@ import $ from './utils';
 import event from './event';
 
 const createAI = (playerNumber, numberOfPlayers, boardSize) => {
-  const allMoves = [...new Array(numberOfPlayers).fill([])].map((arr, i) => ({
+  const allMoves = [...new Array(numberOfPlayers).fill(null)].map((arr, i) => ({
     number: i + 1,
-    pastMoves: [...arr],
+    pastMoves: [],
   }));
   const defeatedPlayers = [];
 
@@ -26,9 +26,7 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
     if (currentTurn !== playerNumber) return;
 
     const playerToAttack = _determinePlayerToAttack();
-    const { pastMoves } = allMoves.filter(
-      (obj) => obj.number === playerToAttack
-    )[0];
+    const { pastMoves } = allMoves.find((obj) => obj.number === playerToAttack);
     const move = doRandomAttack(boardSize, pastMoves).join('-');
     const cell = $(
       `[data-board-num="${playerToAttack}"] .cell[data-pos="${move}"]`
@@ -43,7 +41,9 @@ const createAI = (playerNumber, numberOfPlayers, boardSize) => {
 
     cell.click();
 
-    console.log({ playerNumber, playerToAttack, move });
+    console.log(
+      `Player ${playerNumber} attacks cell ${move} of player ${playerToAttack}'s board`
+    );
   };
 
   const _addDefeatedPlayer = (player) => defeatedPlayers.push(player);

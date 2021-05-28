@@ -37,10 +37,17 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
     ),
   });
 
+  const boardProps = {
+    '$style:border': currentTurn.bindValue((turn) =>
+      turn === number ? '3px solid rgb(206, 18, 18)' : '3px solid black'
+    ),
+  };
+
   return Board({
     number,
     clickHandler,
     cellProps,
+    boardProps,
     board: thisBoard.value,
     size: gameboard.size,
   });

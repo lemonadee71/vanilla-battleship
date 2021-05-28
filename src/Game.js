@@ -11,9 +11,9 @@ import event from './event';
 import createAI from './enemy';
 
 const Game = (mode, numberOfEnemies, restartHandler) => {
-  const currentTurn = { value: 1 };
   const isInTransition = { value: false };
   const isFinishPlacing = createState(false);
+  const currentTurn = createState(1);
 
   const { size, ships } = difficulty[mode];
   const allPlayers = new Map();
@@ -91,7 +91,8 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
 
   const finishGame = () => {
     alert(`Player ${currentTurn.value} wins!`);
-    setTimeout(restartGame, 500);
+    restartGame();
+    // setTimeout(restartGame, 500);
   };
 
   const playerDefeated = (playerNumber) => {
