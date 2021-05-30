@@ -6,6 +6,7 @@ import PlayerBoard from './components/PlayerBoard';
 import event from './event';
 import createAI from './enemy';
 import PreGame from './PreGame';
+import Gameboard from './modules/Gameboard';
 
 const Game = (mode, numberOfEnemies, restartHandler) => {
   const isInTransition = { value: false };
@@ -16,7 +17,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   const allPlayers = new Map();
   const defeatedPlayers = [];
 
-  const playerBoard = createState(placeShipsInRandom(size, ships));
+  const playerBoard = createState({});
 
   const generatePlayers = () => {
     for (let i = 1; i < numberOfEnemies + 2; i++) {
@@ -46,8 +47,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
 
   const finishGame = () => {
     alert(`Player ${currentTurn.value} wins!`);
-    restartGame();
-    // setTimeout(restartGame, 500);
+    event.emit('game over');
   };
 
   const playerDefeated = (playerNumber) => {
@@ -81,7 +81,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     if (currentTurn.value > numberOfEnemies + 1) {
       currentTurn.value = [...allPlayers.values()]
         .map((player) => player.number)
-        .filter((num) => !defeatedPlayers.includes(num))[0];
+        .find((num) => !defeatedPlayers.includes(num));
     }
 
     setTimeout(() => {
@@ -104,10 +104,15 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   // Initialize game
   event.on('player defeated', playerDefeated);
   event.on('attack received', nextTurn);
+  event.on('game over', restartGame, { once: true });
 
   // Initialize players
   generatePlayers();
   [...allPlayers.values()].map((player) => player.init && player.init());
+
+  const setPlayerBoard = (newBoard) => {
+    playerBoard.value = newBoard;
+  };
 
   const finishPlacing = () => {
     // TODO: Allow multiple placing for multiple players
@@ -121,7 +126,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
       ${{
         $content: isFinishPlacing.bindValue((val) =>
           !val
-            ? PreGame(playerBoard, size, ships, finishPlacing)
+            ? PreGame(mode, setPlayerBoard, finishPlacing)
             : html`<h2 id="announcement">Player ${currentTurn.value} turn</h2>
                 <div class="container">
                   ${[...allPlayers.values()].map((player) =>

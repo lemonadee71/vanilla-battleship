@@ -14,7 +14,7 @@ const Board = ({
     class="grid"
     style="grid-template-columns: repeat(${size}, 1fr);"
     ${number ? `data-board-num="${number}"` : ''}
-    ${{ onClick: clickHandler }}
+    ${clickHandler ? { onClick: clickHandler } : ''}
     ${boardProps || ''}
   >
     ${board
