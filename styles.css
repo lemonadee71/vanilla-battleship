@@ -23,7 +23,7 @@
 }
 
 .ship {
-  background-color: rgb(11, 73, 167);
+  background-color: rgb(11, 73, 167) !important;
 }
 
 .hit {

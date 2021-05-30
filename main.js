@@ -100,6 +100,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _event__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./event */ "./src/event.js");
 /* harmony import */ var _enemy__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./enemy */ "./src/enemy.js");
 /* harmony import */ var _PreGame__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./PreGame */ "./src/PreGame.js");
+/* harmony import */ var _modules_Gameboard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./modules/Gameboard */ "./src/modules/Gameboard.js");
+
 
 
 
@@ -118,7 +120,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   const allPlayers = new Map();
   const defeatedPlayers = [];
 
-  const playerBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)((0,_placeShips__WEBPACK_IMPORTED_MODULE_3__.default)(size, ships));
+  const playerBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)({});
 
   const generatePlayers = () => {
     for (let i = 1; i < numberOfEnemies + 2; i++) {
@@ -148,8 +150,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
 
   const finishGame = () => {
     alert(`Player ${currentTurn.value} wins!`);
-    restartGame();
-    // setTimeout(restartGame, 500);
+    _event__WEBPACK_IMPORTED_MODULE_5__.default.emit('game over');
   };
 
   const playerDefeated = (playerNumber) => {
@@ -183,7 +184,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     if (currentTurn.value > numberOfEnemies + 1) {
       currentTurn.value = [...allPlayers.values()]
         .map((player) => player.number)
-        .filter((num) => !defeatedPlayers.includes(num))[0];
+        .find((num) => !defeatedPlayers.includes(num));
     }
 
     setTimeout(() => {
@@ -206,10 +207,15 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   // Initialize game
   _event__WEBPACK_IMPORTED_MODULE_5__.default.on('player defeated', playerDefeated);
   _event__WEBPACK_IMPORTED_MODULE_5__.default.on('attack received', nextTurn);
+  _event__WEBPACK_IMPORTED_MODULE_5__.default.on('game over', restartGame, { once: true });
 
   // Initialize players
   generatePlayers();
   [...allPlayers.values()].map((player) => player.init && player.init());
+
+  const setPlayerBoard = (newBoard) => {
+    playerBoard.value = newBoard;
+  };
 
   const finishPlacing = () => {
     // TODO: Allow multiple placing for multiple players
@@ -223,7 +229,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
       ${{
         $content: isFinishPlacing.bindValue((val) =>
           !val
-            ? (0,_PreGame__WEBPACK_IMPORTED_MODULE_7__.default)(playerBoard, size, ships, finishPlacing)
+            ? (0,_PreGame__WEBPACK_IMPORTED_MODULE_7__.default)(mode, setPlayerBoard, finishPlacing)
             : _component__WEBPACK_IMPORTED_MODULE_0__.html`<h2 id="announcement">Player ${currentTurn.value} turn</h2>
                 <div class="container">
                   ${[...allPlayers.values()].map((player) =>
@@ -254,33 +260,192 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _component__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./component */ "./src/component.js");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
 /* harmony import */ var _placeShips__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./placeShips */ "./src/placeShips.js");
-/* harmony import */ var _components_Board__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/Board */ "./src/components/Board.js");
+/* harmony import */ var _ships_json__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ships.json */ "./src/ships.json");
+/* harmony import */ var _difficulty_json__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./difficulty.json */ "./src/difficulty.json");
+/* harmony import */ var _components_Board__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./components/Board */ "./src/components/Board.js");
+/* harmony import */ var _modules_Gameboard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./modules/Gameboard */ "./src/modules/Gameboard.js");
+/* harmony import */ var _modules_Ship__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./modules/Ship */ "./src/modules/Ship.js");
 
 
 
 
 
-const PreGame = (playerBoard, size, ships, finish) => {
-  const randomize = () => {
-    playerBoard.value = (0,_placeShips__WEBPACK_IMPORTED_MODULE_2__.default)(size, ships);
+
+
+
+
+const PreGame = (mode, setPlayerBoard, finish) => {
+  const { size, ships } = _difficulty_json__WEBPACK_IMPORTED_MODULE_4__[mode];
+  let thisGameBoard = (0,_modules_Gameboard__WEBPACK_IMPORTED_MODULE_6__.default)(size);
+
+  const currentBoard = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)(thisGameBoard);
+  const allShips = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)({});
+  const currentShip = (0,_component__WEBPACK_IMPORTED_MODULE_0__.createState)({});
+
+  const initAllShips = () =>
+    ships.forEach((ship) => {
+      allShips.value[ship.name] = ship.number;
+    });
+
+  const initCurrentShip = () => {
+    const initCoord = { x: null, y: null, direction: null };
+
+    currentShip.value.type = null;
+    currentShip.value.coordinates = { head: initCoord, tail: initCoord };
   };
 
-  const cellProps = ([x, y]) => ({
-    $class: playerBoard.bindValue(
-      (state) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(state.get(x, y), true)}`
-    ),
-  });
+  // Initialize
+  initAllShips();
+  initCurrentShip();
+
+  const determineCoordinates = (pos, direction) => {
+    const shipLength = _ships_json__WEBPACK_IMPORTED_MODULE_3__[currentShip.value.type].length;
+    const [row, col] = pos.split('-');
+    const maxRow = Math.min(
+      +row + (direction === 'y' ? shipLength - 1 : 0),
+      size - 1
+    );
+    const maxCol = Math.min(
+      +col + (direction === 'x' ? shipLength - 1 : 0),
+      size - 1
+    );
+
+    currentShip.value.coordinates = {
+      direction,
+      head: { row: +row, col: +col },
+      tail: { row: maxRow, col: maxCol },
+    };
+  };
+
+  const cellProps = ([row, col]) => [
+    {
+      $class: currentBoard.bindValue(
+        (state) => `cell ${(0,_utils__WEBPACK_IMPORTED_MODULE_1__.determineCellClass)(state.get(row, col), true)}`
+      ),
+      '$style:backgroundColor': currentShip.bind('coordinates', (coords) => {
+        const { head, tail, direction } = coords;
+
+        const isWithinRow =
+          direction === 'y'
+            ? row >= head.row && row <= tail.row
+            : row === head.row;
+        const isWithinColumn =
+          direction === 'y'
+            ? col === head.col
+            : col >= head.col && col <= tail.col;
+
+        if (isWithinRow && isWithinColumn) return 'blue';
+
+        return 'white';
+      }),
+    },
+    {
+      onMouseEnter: (e) => {
+        if (!currentShip.value.type) return;
+
+        const pos = e.target.getAttribute('data-pos');
+        const direction = e.ctrlKey ? 'x' : 'y';
+        determineCoordinates(pos, direction);
+        console.log(pos, currentShip.value.coordinates);
+      },
+    },
+  ];
+
+  const selectShip = (e) => {
+    currentShip.value.type = e.target.getAttribute('data-name');
+  };
+
+  const placeShip = (e) => {
+    if (!e.target.matches('.cell')) return;
+
+    try {
+      const { name, length } = _ships_json__WEBPACK_IMPORTED_MODULE_3__[currentShip.value.type];
+      const ship = new _modules_Ship__WEBPACK_IMPORTED_MODULE_7__.default(name, length);
+      const pos = e.target
+        .getAttribute('data-pos')
+        .split('-')
+        .map((num) => +num);
+
+      thisGameBoard.placeShip({
+        ship,
+        pos,
+        direction: currentShip.value.coordinates.direction,
+      });
+
+      currentBoard.value = thisGameBoard;
+
+      const shipCount = allShips.value[currentShip.value.type];
+      allShips.value[currentShip.value.type] = shipCount - 1;
+
+      initCurrentShip();
+    } catch (error) {
+      console.warn(error.toString());
+    }
+  };
+
+  const randomize = () => {
+    thisGameBoard = (0,_placeShips__WEBPACK_IMPORTED_MODULE_2__.default)(size, ships);
+    currentBoard.value = thisGameBoard;
+
+    initCurrentShip();
+    ships.forEach((ship) => {
+      allShips.value[ship.name] = 0;
+    });
+  };
+
+  const reset = () => {
+    thisGameBoard.reset();
+    currentBoard.value = thisGameBoard;
+
+    initCurrentShip();
+    initAllShips();
+  };
+
+  const finishPlacing = () => {
+    const remainingShips = Object.values(allShips.value).reduce(
+      (a, b) => a + b
+    );
+
+    if (remainingShips !== 0) {
+      alert(`Please position the ${remainingShips} remaining ships`);
+      return;
+    }
+
+    setPlayerBoard(currentBoard.value);
+    finish();
+  };
 
   return _component__WEBPACK_IMPORTED_MODULE_0__.html`<button ${{ onClick: randomize }}>Randomize</button>
-    <button ${{ onClick: finish }}>Finish placing</button>
-    <h2>Place your ships</h2>
+    <button ${{ onClick: reset }}>Reset</button>
+    <button ${{ onClick: finishPlacing }}>Finish placing</button>
+    <h2>Place your ships (hold ctrl key to switch direction)</h2>
+    <div>
+      ${ships.map(
+        (ship) =>
+          _component__WEBPACK_IMPORTED_MODULE_0__.html`<button
+            data-name="${ship.name}"
+            ${{ onClick: selectShip }}
+            ${{
+              '$style:border': currentShip.bind('type', (shipName) =>
+                shipName === ship.name ? '1px solid red' : ''
+              ),
+              $disabled: allShips.bind(ship.name, (value) => !value),
+              $textContent: allShips.bind(
+                ship.name,
+                (num) => `${ship.name} (${num})`
+              ),
+            }}
+          ></button>`
+      )}
+    </div>
     <div class="container">
-      ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_3__.default)({
+      ${(0,_components_Board__WEBPACK_IMPORTED_MODULE_5__.default)({
         size,
         cellProps,
-        board: playerBoard.value.getBoard(),
+        clickHandler: placeShip,
+        board: currentBoard.value.getBoard(),
       })}
-    </div>`;
+    </div> `;
 };
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (PreGame);
@@ -720,7 +885,7 @@ const Board = ({
     class="grid"
     style="grid-template-columns: repeat(${size}, 1fr);"
     ${number ? `data-board-num="${number}"` : ''}
-    ${{ onClick: clickHandler }}
+    ${clickHandler ? { onClick: clickHandler } : ''}
     ${boardProps || ''}
   >
     ${board
