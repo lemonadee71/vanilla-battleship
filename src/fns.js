@@ -3,7 +3,7 @@ import Gameboard from './modules/Gameboard';
 import { doRandomPlacing } from './modules/Player';
 import allShipDetails from './ships.json';
 
-const placeShipsInRandom = (size, ships) => {
+const randomizeBoard = (size, ships) => {
   const currentBoard = Gameboard(size);
 
   const allShips = [...ships];
@@ -31,4 +31,4 @@ const placeShipsInRandom = (size, ships) => {
   return currentBoard;
 };
 
-export default placeShipsInRandom;
+export default randomizeBoard;

@@ -7,15 +7,15 @@ const Board = ({
   size,
   board,
   clickHandler,
-  boardProps = null,
-  cellProps,
+  additionalCellProps,
+  additionalBoardProps = null,
 }) =>
   html`<div
     class="grid"
     style="grid-template-columns: repeat(${size}, 1fr);"
     ${number ? `data-board-num="${number}"` : ''}
     ${clickHandler ? { onClick: clickHandler } : ''}
-    ${boardProps || ''}
+    ${additionalBoardProps || ''}
   >
     ${board
       .map((row, i) =>
@@ -24,7 +24,7 @@ const Board = ({
             html`<div
               data-pos="${i}-${j}"
               class="cell ${determineCellClass(cell)}"
-              ${cellProps.call(null, [i, j])}
+              ${additionalCellProps.call(null, [i, j])}
             ></div>`
         )
       )

@@ -4,7 +4,7 @@ import event from '../event';
 import Board from './Board';
 
 const PlayerBoard = (player, currentTurn, inTransition) => {
-  const { id, type, number, gameboard } = player;
+  const { type, number, gameboard } = player;
   const thisBoard = createState(gameboard.getBoard());
 
   const clickHandler = (e) => {
@@ -31,13 +31,13 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
     }
   };
 
-  const cellProps = ([x, y]) => ({
+  const additionalCellProps = ([x, y]) => ({
     $class: thisBoard.bindValue(
-      (board) => `cell ${determineCellClass(board[x][y], type === 'player')}`
+      (board) => `cell ${determineCellClass(board[x][y], type === 'human')}`
     ),
   });
 
-  const boardProps = {
+  const additionalBoardProps = {
     '$style:border': currentTurn.bindValue((turn) =>
       turn === number ? '3px solid rgb(206, 18, 18)' : '3px solid black'
     ),
@@ -46,8 +46,8 @@ const PlayerBoard = (player, currentTurn, inTransition) => {
   return Board({
     number,
     clickHandler,
-    cellProps,
-    boardProps,
+    additionalCellProps,
+    additionalBoardProps,
     board: thisBoard.value,
     size: gameboard.size,
   });

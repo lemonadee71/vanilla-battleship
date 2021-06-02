@@ -3,7 +3,8 @@ import { html, createState } from './component';
 
 const App = () => {
   const isGameStart = createState(false);
-  let mode = 'test';
+  const defaultMode = 'normal';
+  let mode = defaultMode;
   let numberOfEnemies = 1;
 
   const changeMode = (e) => {
@@ -21,7 +22,7 @@ const App = () => {
 
   const restartGame = () => {
     isGameStart.value = false;
-    mode = 'test';
+    mode = defaultMode;
     numberOfEnemies = 1;
   };
 
@@ -38,7 +39,7 @@ const App = () => {
             ? html`
                 <label for="mode">Choose difficulty:</label>
                 <select name="mode" ${{ onChange: changeMode }}>
-                  <option value="test" selected>Test</option>
+                  <!-- <option value="test" selected>Test</option> -->
                   <option value="normal">Normal</option>
                   <option value="medium">Intermediate</option>
                   <option value="hard">Hard</option>
@@ -46,10 +47,11 @@ const App = () => {
                 <label for="numberOfEnemies">Number of enemy computer:</label>
                 <input
                   name="numberOfEnemies"
-                  placeholder="Number of enemy computer"
+                  placeholder="Max: 9"
                   type="number"
                   min="1"
                   max="9"
+                  style="width: 70px;"
                   ${{ onChange: changeNumberOfEnemies }}
                 />
                 <button ${{ onClick: startGame }}>Start game</button>

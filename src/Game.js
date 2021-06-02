@@ -1,12 +1,11 @@
+import PlayerBoard from './components/PlayerBoard';
 import { createState, html } from './component';
 import difficulty from './difficulty.json';
 import $, { uuid } from './utils';
-import placeShipsInRandom from './placeShips';
-import PlayerBoard from './components/PlayerBoard';
+import randomizeBoard from './fns';
 import event from './event';
 import createAI from './enemy';
 import PreGame from './PreGame';
-import Gameboard from './modules/Gameboard';
 
 const Game = (mode, numberOfEnemies, restartHandler) => {
   const isInTransition = { value: false };
@@ -22,8 +21,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
   const generatePlayers = () => {
     for (let i = 1; i < numberOfEnemies + 2; i++) {
       const id = uuid(4);
-      // TODO: allow users to choose the player type
-      const type = i === 1 ? 'player' : 'computer';
+      const type = i === 1 ? 'human' : 'computer';
       const { init, destroy } =
         type === 'computer'
           ? createAI(i, numberOfEnemies + 1, size)
@@ -35,7 +33,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
         init,
         destroy,
         number: i,
-        gameboard: type === 'computer' ? placeShipsInRandom(size, ships) : null,
+        gameboard: type === 'computer' ? randomizeBoard(size, ships) : null,
         isDefeated: false,
       });
     }
@@ -70,9 +68,9 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
     }
   };
 
-  const nextTurn = (target) => {
+  const nextTurn = () => {
     isInTransition.value = true;
-    announce(`Player ${currentTurn.value} attacked Player ${target}`);
+    // announce(`Player ${currentTurn.value} attacked Player ${target}`);
 
     do {
       currentTurn.value++;
@@ -88,7 +86,11 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
       isInTransition.value = false;
 
       event.emit('next turn', currentTurn.value);
-      announce(`Player ${currentTurn.value} turn`);
+      announce(
+        currentTurn.value === 1
+          ? 'Your turn'
+          : `Player ${currentTurn.value} turn`
+      );
     }, 300);
   };
 

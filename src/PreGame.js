@@ -1,6 +1,6 @@
 import { createState, html } from './component';
 import { determineCellClass } from './utils';
-import placeShipsInRandom from './placeShips';
+import randomizeBoard from './fns';
 import shipDetails from './ships.json';
 import difficulty from './difficulty.json';
 import Board from './components/Board';
@@ -50,7 +50,7 @@ const PreGame = (mode, setPlayerBoard, finish) => {
     };
   };
 
-  const cellProps = ([row, col]) => [
+  const additionalCellProps = ([row, col]) => [
     {
       $class: currentBoard.bindValue(
         (state) => `cell ${determineCellClass(state.get(row, col), true)}`
@@ -73,13 +73,12 @@ const PreGame = (mode, setPlayerBoard, finish) => {
       }),
     },
     {
-      onMouseEnter: (e) => {
+      onMouseOver: (e) => {
         if (!currentShip.value.type) return;
 
         const pos = e.target.getAttribute('data-pos');
         const direction = e.ctrlKey ? 'x' : 'y';
         determineCoordinates(pos, direction);
-        console.log(pos, currentShip.value.coordinates);
       },
     },
   ];
@@ -117,7 +116,7 @@ const PreGame = (mode, setPlayerBoard, finish) => {
   };
 
   const randomize = () => {
-    thisGameBoard = placeShipsInRandom(size, ships);
+    thisGameBoard = randomizeBoard(size, ships);
     currentBoard.value = thisGameBoard;
 
     initCurrentShip();
@@ -174,7 +173,7 @@ const PreGame = (mode, setPlayerBoard, finish) => {
     <div class="container">
       ${Board({
         size,
-        cellProps,
+        additionalCellProps,
         clickHandler: placeShip,
         board: currentBoard.value.getBoard(),
       })}
