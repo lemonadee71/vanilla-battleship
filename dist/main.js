@@ -60,9 +60,9 @@ const App = () => {
                   <option value="medium">Intermediate</option>
                   <option value="hard">Hard</option>
                 </select>
-                <label for="numberOfEnemies">Number of enemy computer:</label>
+                <label for="noOfEnemies">Number of enemy computer:</label>
                 <input
-                  name="numberOfEnemies"
+                  name="noOfEnemies"
                   placeholder="Max: 9"
                   type="number"
                   min="1"
@@ -214,7 +214,7 @@ const Game = (mode, numberOfEnemies, restartHandler) => {
 
   // Initialize players
   generatePlayers();
-  [...allPlayers.values()].map((player) => player.init && player.init());
+  allPlayers.forEach((player) => player.init && player.init());
 
   const setPlayerBoard = (newBoard) => {
     playerBoard.value = newBoard;
