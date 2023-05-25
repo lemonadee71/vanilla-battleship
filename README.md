@@ -1,13 +1,13 @@
 # vanilla-battleship
 The classic game of battleship written in vanilla JS. Play with up to 9 enemy computers!
 
-## Features
+## :rocket: Features
 - You can play with up to 9 enemy computers
 - Normal, intermediate, and hard difficulties
 - Randomize ship placements
 - Simple turn based gameplay
 
-## Technologies Used
+## 💻 Technologies Used
 - poor-man-jsx
 - Webpack
 - Jest
